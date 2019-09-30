@@ -4,47 +4,54 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import jtorrent.Requests.*;
+import jtorrent.Communication.Requests.*;
+import jtorrent.Database.*;
 
 public class PeerThread implements Runnable {
     private Socket socket;
     private Tracker tracker;
     private String username;
     private String password;
-    private ObjectInputStream ois;
-    private ObjectOutputStream oos;
-    private DataBaseOps dataBaseOps = new DataBaseOps();
+    private ObjectInputStream readFromPeer;
+    private ObjectOutputStream writeToPeer;
+    private UserTable userTable = new UserTable();
+    private FilesTable filesTable = new FilesTable();
+
     private ExecutorService executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(3);
 
-    PeerThread(Socket socket, Tracker tracker, String username, String password)
-            throws IOException, SQLException, ClassNotFoundException {
-        this.socket = socket;
-        this.tracker = tracker;
-        this.username = username;
-        this.password = password;
-        this.ois = new ObjectInputStream(socket.getInputStream());
-        this.oos = new ObjectOutputStream(socket.getOutputStream());
+    PeerThread(Socket socket, Tracker tracker, String username, String password) {
+        try {
+            this.socket = socket;
+            this.tracker = tracker;
+            this.username = username;
+            this.password = password;
+            this.readFromPeer = new ObjectInputStream(socket.getInputStream());
+            this.writeToPeer = new ObjectOutputStream(socket.getOutputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void sendRequest(SeedRequest seedRequest) {
         try {
-            this.oos.writeObject(seedRequest);
+            this.writeToPeer.writeObject(seedRequest);
         } catch (IOException e) {
             System.out.println("could not send request to peer!");
             e.printStackTrace();
         }
     }
 
-    public void updateIndex() throws IOException, ClassNotFoundException {
-        String[] addedFiles = (String[]) ois.readObject();
-        String[] removedFiles = (String[]) ois.readObject();
-        dataBaseOps.updateFileOwners(this, addedFiles, removedFiles);
+    public void processUpdateRequest(UpdateRequest updateRequest) {
+        updateRequest.setHostName(this.socket.getInetAddress().toString());
+        filesTable.Create(updateRequest);
+        filesTable.Delete(updateRequest);
     }
 
     /**
@@ -53,16 +60,37 @@ public class PeerThread implements Runnable {
      *                     data to connnect with the socket
      * 
      */
-    public void leechRequest(LeechRequest leechRequest) {
-        String merkleRoot = leechRequest.getMerkleRoot();
+    public void processLeechRequest(LeechRequest leechRequest) {
         leechRequest.setHostName(this.socket.getInetAddress().toString());
+        ArrayList<String> peerIps = new ArrayList<String>();
+        ResultSet rs = filesTable.Retrieve(leechRequest);
         try {
-            ArrayList<String> peers = dataBaseOps.queryFileOwners(merkleRoot);
-            this.tracker.requestSeed(peers, leechRequest.getHostName(), leechRequest.getPort(),
-                    leechRequest.getMerkleRoot());
+            while (rs.next()) {
+                peerIps.add(rs.getString("currentIP"));
+            }
         } catch (SQLException e) {
-            System.out.println("Error while Querying DB!");
             e.printStackTrace();
+        }
+        this.tracker.requestSeed(peerIps, leechRequest.getHostName(), leechRequest.getPort(),
+                leechRequest.getMerkleRoot());
+    }
+
+    public void processConnectRequest(ConnectRequest connectRequest) {
+        connectRequest.setHostName(this.socket.getInetAddress().toString());
+        switch (connectRequest.getConnectionType()) {
+        case "REGISTER":
+            connectRequest.setActive(true);
+            userTable.Create(connectRequest);
+            break;
+        case "LOGIN":
+            connectRequest.setActive(true);
+            userTable.Update(connectRequest);
+            break;
+        case "DISCONNECT":
+            connectRequest.setActive(false);
+            userTable.Update(connectRequest);
+            this.removeNode();
+            break;
         }
     }
 
@@ -73,34 +101,38 @@ public class PeerThread implements Runnable {
         } catch (IOException e) {
             System.out.println("Socket Connection with peer" + this.getUsername() + "closed");
         }
+        Thread.currentThread().interrupt();
     }
 
     public void processRequest() {
         try {
-            Request request = (Request) ois.readObject();
+            Request request = (Request) readFromPeer.readObject();
             switch (request.getRequestType()) {
             case "LEECH":
-                leechRequest((LeechRequest) request);
+                processLeechRequest((LeechRequest) request);
                 break;
-            case "":
-
+            case "CONNECT":
+                processConnectRequest((ConnectRequest) request);
+                break;
+            case "UPDATE":
+                processUpdateRequest((UpdateRequest) request);
+                break;
             }
         } catch (ClassNotFoundException | IOException e) {
             e.printStackTrace();
         }
     }
 
-    @Override
     /**
      * accepts requests coming from clientside peers, and processes them in a
      * threadpool of size 3
      */
+    @Override
     public void run() {
         while (this.socket.isConnected()) {
             executor.submit(() -> {
                 processRequest();
             });
-
         }
     }
 

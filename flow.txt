@@ -1,0 +1,95 @@
+
+When a peer goes online they connect to a server by establishing a socket connection.
+Then the peer logs in/registers.
+
+When a peer wants to share a file, they encode the file, split it into pieces and make a metadata file
+Metadata file includes a merkleRoot which uniquely identifies a file, along with sequencing information for the individual pieces.
+This metadata file, is then made available to peers, either publicly or privately. 
+Note:-When a peer encodes the files, the orginal file is kept intact. The encoded file pieces are written in a location 
+~/.torrent/{merkleroot}/data/.
+the metadata for the same is written in ~/.torrent/{merkleroot}/metadata/.
+
+When a peer wants a file, they must first obtain the metadata of the file. Eg. abc.txt.metadata
+This metadata will include the merkleRoot of the file, and indexing info. 
+Peer makes a leechrequest for given merkleRoot to tracker. 
+Tracker then finds appropriate peers having the same file and sends them all a seedRequest 
+
+The leeching peer then sets up a serversocket to which all seeding peers connect and file transfer begins.
+Files are transferred piece by piece. Each peer is alloted a certain number of piece its must send to the leecher 
+All received pieces are stored in ~/.torrent/{merkleRoot}/data/. 
+
+Once all pieces are recieved the leecher decodes and merges the files to give the final file, and also, announces to the tracker
+that it can now act as a seeder. 
+
+Each peer must also maintain an index file, which lists which files it has available for transfer.
+The updated index must be sent to tracker in an announce/Update request 
+ 
+
+Tracker-peer communication takes place through requests 
+peer-2-peer communication takes place through messages
+
+
+
+
+TRACKER Package 
+1. Tracker.java 
+Summary :- keeps track of all connections
+- Tracker accepts peer connections
+- Starts threads to handle individual peer
+
+2. PeerThread.java
+Summary :- Handles all processing for one individual peer 
+- One thread assigned to each connected peer
+- Basically a bridge between tracker and peer
+- handles all requests coming from assigned peer 
+
+3. DatabaseOps.java
+Summary :-  Handles all database operations, Runs tracker side
+- Authenticates login/sign up 
+- maintain list of files each peer has, along with currentIP of the peer 
+
+REQUESTS PACKAGE 
+1. Requests.java 
+Summary :- interface for different kinds of requests
+All communication between peer and tracker handled by requests  
+Implemented by  
+A. LeechRequests :- Sent by peer when they want to leech a file. Includes, filename, peer Ip, PORT NO
+B. ConnectRequest :- Sent by peer, basically login signup 
+C. SeedRequest :- Sent by tracker to peer. The peer has a file that is being requested 
+D. Announce/Update :- Sent by peer to tracker, to announce/update availability of files 
+E. Exit :- Sent by Peer, to tell tracker it is going off line 
+
+ENCODING PACKAGE 
+1. Encode.java 
+- Takes a file, splits into chunks.
+- Maintains index of file sequences and hashes 
+- creates named metadatafile.
+2. Decode.java 
+- reads hashmap from metadata 
+- gets sequence of files 
+- reads files according to sequence into final file 
+- announces new seed 
+
+
+CLIENT PACKAGE 
+1.Peer.java 
+Summary :- client side operation like login, signup,request, share, exit 
+- (for the moment) connects to a hardcoded IP of tracker 
+- login/Signup 
+- download files if metadata exists (by sending leechRequest)
+- Create metadata for files you wish to share (by sending announce request)
+- Transmit requested files if they exist (by recieving seedrequest)
+- Exit
+
+2. FileTransfer.java 
+Summary :- Managing sending and recieving of files 
+- if requesting, spin up serversocket and send leechRequest 
+- if sending, establish socket conection with leecher and start transferring 
+
+3. FileManager.java 
+Summary :- Maintains list of all files, availabile for transfer (stores in ~/.torrents/username/)
+If files changed or remved, updates tracker accordingly 
+
+LOAD PACKAGE 
+
+

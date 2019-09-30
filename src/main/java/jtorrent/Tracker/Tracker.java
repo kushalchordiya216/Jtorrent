@@ -7,7 +7,7 @@ import java.net.Socket;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import jtorrent.Requests.*;
+import jtorrent.Communication.Requests.*;
 
 public class Tracker {
 
@@ -28,6 +28,7 @@ public class Tracker {
         ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
         ConnectRequest connRequest = (ConnectRequest) ois.readObject();
         connRequest.setHostName(socket.getInetAddress().toString());
+        // TODO:remove '/' from inetaddress
         Integer result;
         if (connRequest.getConnectionType() == "LOGIN") {
             result = dataBaseOps.updateUser(connRequest.getUsername(), connRequest.getHostName(), true,
@@ -73,8 +74,4 @@ public class Tracker {
         });
 
     }
-}
-
-class Routing {
-
 }

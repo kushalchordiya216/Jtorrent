@@ -1,4 +1,4 @@
-package jtorrent.Requests;
+package jtorrent.Communication.Requests;
 
 public class SeedRequest implements Request {
 
@@ -34,6 +34,11 @@ public class SeedRequest implements Request {
 
     public String getMerkleRoot() {
         return merkleRoot;
+    }
+
+    @Override
+    public void setHostName(String hostName) {
+        this.hostname = hostName;
     }
 
 }

@@ -3,6 +3,7 @@ package jtorrent.Tracker;
 import java.sql.*;
 import java.util.ArrayList;
 
+//TODO:make separate package for databaseOps, with generalized interface and implementation
 public class DataBaseOps {
     private Connection connection = null;
     PreparedStatement stmt = null;
@@ -19,6 +20,12 @@ public class DataBaseOps {
         }
     }
 
+    /**
+     * 
+     * @param peerThread
+     * @param addedFiles
+     * @param removedFiles
+     */
     public void updateFileOwners(PeerThread peerThread, String[] addedFiles, String[] removedFiles) {
         try {
             stmt = connection
@@ -40,6 +47,12 @@ public class DataBaseOps {
         }
     }
 
+    /**
+     * 
+     * @param merkleRoot
+     * @return
+     * @throws SQLException
+     */
     public ArrayList<String> queryFileOwners(String merkleRoot) throws SQLException {
         ArrayList<String> peers = new ArrayList<String>();
         stmt = connection

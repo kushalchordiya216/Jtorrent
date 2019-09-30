@@ -9,13 +9,14 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
 import com.google.common.hash.Hashing;
 
 public class Encode {
+    // TODO: test out all functionalities
+    // TODO: write to proper path
     private File file, metadata;
     private BufferedReader reader;
     private HashMap<String, String> MetaDataHash;
@@ -47,7 +48,8 @@ public class Encode {
                     // do nothing
                 }
             } while (readChar != -1 && byteIndex < 1024 * 1024);
-            String hash = Integer.toString(Arrays.hashCode(piece));
+            String hash = Hashing.sha256().hashBytes(piece).toString();
+            // String hash = Integer.toString(Arrays.hashCode(piece));
             this.write(hash, piece);
             MetaDataHash.put(Integer.toString(index), hash);
             index++;

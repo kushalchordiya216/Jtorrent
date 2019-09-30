@@ -6,6 +6,8 @@ import java.util.HashMap;
 public class Decode {
     private HashMap<String, String> metaDataHash;
 
+    // TODO: Read from proper path
+    // TODO: Create copy of metadata in proper path
     public Decode(String metaFile) throws IOException, ClassNotFoundException {
         File metaFile1 = new File(metaFile);
         ObjectInputStream ois = new ObjectInputStream(new FileInputStream(metaFile1));

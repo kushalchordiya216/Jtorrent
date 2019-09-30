@@ -1,4 +1,4 @@
-package jtorrent.Requests;
+package jtorrent.Communication.Requests;
 
 public class LeechRequest implements Request {
 

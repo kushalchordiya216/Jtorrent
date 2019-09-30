@@ -1,4 +1,4 @@
-package jtorrent.Requests;
+package jtorrent.Communication.Requests;
 
 public class ConnectRequest implements Request {
 
@@ -12,6 +12,7 @@ public class ConnectRequest implements Request {
     private String connectionType = null;
     private String username = null;
     private String password = null;
+    private Boolean active = null;
 
     public ConnectRequest(Integer port, String connectionType, String username, String password) {
         this.port = port;
@@ -49,6 +50,14 @@ public class ConnectRequest implements Request {
 
     public String getPassword() {
         return password;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
+    }
+
+    public Boolean getActive() {
+        return this.active;
     }
 
 }
