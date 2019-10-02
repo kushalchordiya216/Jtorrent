@@ -13,7 +13,6 @@ public class Tracker {
 
     private HashMap<String, PeerThread> connectedPeers = null;
     private ServerSocket serverSocket;
-    private DataBaseOps dataBaseOps = new DataBaseOps();
 
     public Tracker() {
         try {
@@ -28,18 +27,7 @@ public class Tracker {
         ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
         ConnectRequest connRequest = (ConnectRequest) ois.readObject();
         connRequest.setHostName(socket.getInetAddress().toString());
-        // TODO:remove '/' from inetaddress
-        Integer result;
-        if (connRequest.getConnectionType() == "LOGIN") {
-            result = dataBaseOps.updateUser(connRequest.getUsername(), connRequest.getHostName(), true,
-                    connRequest.getPassword());
-        } else {
-            result = dataBaseOps.addUser(connRequest.getUsername(), connRequest.getHostName(), true,
-                    connRequest.getPassword());
-        }
-        // TODO: send appropriate response for failure / success
-
-        if (result != -1) {
+        {
             PeerThread peerThread = new PeerThread(socket, this, connRequest.getUsername(), connRequest.getPassword());
             this.connectedPeers.put(connRequest.getUsername(), peerThread);
             Thread peer = new Thread(peerThread);
@@ -48,12 +36,7 @@ public class Tracker {
     }
 
     public void removeConnection(PeerThread peerThread) {
-        try {
-            dataBaseOps.updateUser(peerThread.getUsername(), "", false, peerThread.getUsername());
-            connectedPeers.remove(peerThread.getUsername());
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        connectedPeers.remove(peerThread.getUsername());
     }
 
     public void requestSeed(ArrayList<String> peers, String leecherIp, int port, String merkleRoot) {
@@ -63,15 +46,12 @@ public class Tracker {
     }
 
     public void main(String[] args) {
-        new Thread(() -> {
-            while (true) {
-                try {
-                    acceptIncomingConnection();
-                } catch (IOException | ClassNotFoundException | SQLException e) {
-                    e.printStackTrace();
-                }
+        while (true) {
+            try {
+                acceptIncomingConnection();
+            } catch (IOException | ClassNotFoundException | SQLException e) {
+                e.printStackTrace();
             }
-        });
-
+        }
     }
 }

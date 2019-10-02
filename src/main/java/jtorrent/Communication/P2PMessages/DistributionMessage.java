@@ -1,4 +1,4 @@
-package jtorrent.Communication.Messages;
+package jtorrent.Communication.P2PMessages;
 
 /**
  * This message is sent by leecher to seeders to inform them what parts of the

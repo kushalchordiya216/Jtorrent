@@ -1,4 +1,4 @@
-package jtorrent.Communication.Messages;
+package jtorrent.Communication.P2PMessages;
 
 /**
  * This message is sent by the peer when it is going offline

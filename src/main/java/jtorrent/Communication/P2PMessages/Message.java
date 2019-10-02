@@ -1,4 +1,4 @@
-package jtorrent.Communication.Messages;
+package jtorrent.Communication.P2PMessages;
 
 import java.io.Serializable;
 

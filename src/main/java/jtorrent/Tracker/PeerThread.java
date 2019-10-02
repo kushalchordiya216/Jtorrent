@@ -17,8 +17,7 @@ import jtorrent.Database.*;
 public class PeerThread implements Runnable {
     private Socket socket;
     private Tracker tracker;
-    private String username;
-    private String password;
+    private String username, password;
     private ObjectInputStream readFromPeer;
     private ObjectOutputStream writeToPeer;
     private UserTable userTable = new UserTable();
@@ -93,6 +92,7 @@ public class PeerThread implements Runnable {
             break;
         }
     }
+    // TODO: send appropriate response after connecting
 
     public void removeNode() {
         this.tracker.removeConnection(this);

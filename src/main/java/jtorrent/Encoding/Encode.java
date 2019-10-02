@@ -20,11 +20,12 @@ public class Encode {
     private File file, metadata;
     private BufferedReader reader;
     private HashMap<String, String> MetaDataHash;
-    private int index = 0;
+    private String tempDirectory = null; // tempoarary directory name where encoded pieces will be stored
 
-    private Encode(String filename) {
+    public Encode(String filename, String rootDirectory) {
         file = new File(filename);
-        metadata = new File(filename + ".metadata");
+        this.tempDirectory = rootDirectory + "temp/";
+        metadata = new File(this.tempDirectory + filename + ".metadata"); // metadatafile created inside temp directory
         try {
             FileReader fileReader = new FileReader(file);
             reader = new BufferedReader(fileReader);
@@ -34,10 +35,11 @@ public class Encode {
     }
 
     public void Split() {
+        int index = 0; // index for a piece, this will be used to construct the metadataHashmap
         int readChar = 0;
         do {
             byte[] piece = new byte[1024 * 1024];
-            int byteIndex = 0;
+            int byteIndex = 0; // read data byte by byte, so that no extra garbage gets appended at the end
             do {
                 try {
                     readChar = reader.read();
@@ -45,16 +47,19 @@ public class Encode {
                     byteIndex++;
                 } catch (IOException e) {
                     System.out.println("Error while reading into file!\n");
-                    // do nothing
+                    return;
                 }
             } while (readChar != -1 && byteIndex < 1024 * 1024);
             String hash = Hashing.sha256().hashBytes(piece).toString();
-            // String hash = Integer.toString(Arrays.hashCode(piece));
-            this.write(hash, piece);
+            this.writePiece(hash, piece);
             MetaDataHash.put(Integer.toString(index), hash);
             index++;
         } while (readChar != -1);
-        writeMetaData();
+        String merkleRoot = createMerkleRoot(MetaDataHash); // once all pieces are created, obtain merkleRoot of the
+        writeMetaData(merkleRoot); // write metadata file
+        File tempDirectoryFolder = new File(this.tempDirectory);
+        tempDirectoryFolder.renameTo(new File(createMerkleRoot(MetaDataHash))); // rename tempoaray folder with
+                                                                                // merkleRootfolder
     }
 
     private String getTrackerInfo() {
@@ -62,10 +67,10 @@ public class Encode {
         return null;
     }
 
-    private void writeMetaData() {
+    private void writeMetaData(String merkleRoot) {
         try {
             ObjectOutputStream metaDataOutput = new ObjectOutputStream(new FileOutputStream(metadata));
-            MetaDataHash.put("merkleRoot", createMerkleRoot(MetaDataHash));
+            MetaDataHash.put("merkleRoot", merkleRoot);
             MetaDataHash.put("Tracker", getTrackerInfo());
             MetaDataHash.put("Name", file.getName());
             metaDataOutput.writeObject(MetaDataHash);
@@ -80,12 +85,12 @@ public class Encode {
      * accept name and content of individual piece as parameter, and write it out to
      * a file on local filesystem
      */
-    private void write(String name, byte[] piece) {
+    private void writePiece(String name, byte[] piece) {
         File newFile = new File(name);
         try {
-            OutputStream oos = new FileOutputStream(newFile);
-            oos.write(piece);
-            oos.close();
+            OutputStream pieceWriter = new FileOutputStream(this.tempDirectory + newFile);
+            pieceWriter.write(piece);
+            pieceWriter.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -99,8 +104,7 @@ public class Encode {
         return MerkleRoot;
     }
 
-    public static void main(String[] args) {
-        Encode encode = new Encode("/home/kushal/WorkSpace/Java/SDL Project/Final/test.txt");
-        encode.Split();
+    public void main() {
+        Split();
     }
 }
