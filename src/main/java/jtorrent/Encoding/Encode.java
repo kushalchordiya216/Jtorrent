@@ -2,6 +2,7 @@ package jtorrent.Encoding;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -9,6 +10,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
@@ -20,46 +22,45 @@ public class Encode {
     private File file, metadata;
     private BufferedReader reader;
     private HashMap<String, String> MetaDataHash;
-    private String tempDirectory = null; // tempoarary directory name where encoded pieces will be stored
-
-    public Encode(String filename, String rootDirectory) {
-        file = new File(filename);
-        this.tempDirectory = rootDirectory + "temp/";
-        metadata = new File(this.tempDirectory + filename + ".metadata"); // metadatafile created inside temp directory
-        try {
-            FileReader fileReader = new FileReader(file);
-            reader = new BufferedReader(fileReader);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+    private String tempDirectory = null; // temporary directory name where encoded pieces will be stored
+    private String rootDirectory=null;
+    public Encode(String filepath, String Username) {
+    	MetaDataHash = new HashMap<String, String>();
+        file = new File(filepath);
+        this.rootDirectory = System.getProperty("user.home")+"/.P2P/"+Username;
+        this.tempDirectory = rootDirectory +  "/temp";
+        File f = new File(this.tempDirectory);
+        f.mkdir();
+        metadata = new File(this.tempDirectory + "/" + file.getName() + ".metadata"); // metadatafile created inside temp directory
+      
     }
 
     public void Split() {
-        int index = 0; // index for a piece, this will be used to construct the metadataHashmap
-        int readChar = 0;
-        do {
-            byte[] piece = new byte[1024 * 1024];
-            int byteIndex = 0; // read data byte by byte, so that no extra garbage gets appended at the end
-            do {
-                try {
-                    readChar = reader.read();
-                    piece[byteIndex] = (byte) readChar;
-                    byteIndex++;
-                } catch (IOException e) {
-                    System.out.println("Error while reading into file!\n");
-                    return;
-                }
-            } while (readChar != -1 && byteIndex < 1024 * 1024);
-            String hash = Hashing.sha256().hashBytes(piece).toString();
-            this.writePiece(hash, piece);
-            MetaDataHash.put(Integer.toString(index), hash);
-            index++;
-        } while (readChar != -1);
+        int index = 0;
+        long fileParts=(long)file.length()/(1024*1024);
+		int remainPartLength=(int)((long)file.length()%(1024*1024));
+		try {
+			FileInputStream reader = new FileInputStream(file);
+			for(index = 0;index < fileParts;index++)
+			{
+				byte piece[] = new byte[1024*1024];
+				reader.read(piece);
+				String hash = Hashing.sha256().hashBytes(piece).toString();
+				this.writePiece(hash, piece);
+				MetaDataHash.put(Integer.toString(index), hash);
+			}
+			byte piece[] = new byte[remainPartLength];
+			reader.read(piece);
+			String hash = Hashing.sha256().hashBytes(piece).toString();
+			this.writePiece(hash, piece);
+			MetaDataHash.put(Integer.toString(index), hash);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
         String merkleRoot = createMerkleRoot(MetaDataHash); // once all pieces are created, obtain merkleRoot of the
         writeMetaData(merkleRoot); // write metadata file
         File tempDirectoryFolder = new File(this.tempDirectory);
-        tempDirectoryFolder.renameTo(new File(createMerkleRoot(MetaDataHash))); // rename tempoaray folder with
-                                                                                // merkleRootfolder
+        tempDirectoryFolder.renameTo(new File(this.rootDirectory + "/" + merkleRoot));
     }
 
     private String getTrackerInfo() {
@@ -86,9 +87,9 @@ public class Encode {
      * a file on local filesystem
      */
     private void writePiece(String name, byte[] piece) {
-        File newFile = new File(name);
+        File newFile = new File(this.tempDirectory +"/" + name);
         try {
-            OutputStream pieceWriter = new FileOutputStream(this.tempDirectory + newFile);
+            FileOutputStream pieceWriter = new FileOutputStream(newFile);
             pieceWriter.write(piece);
             pieceWriter.close();
         } catch (IOException e) {
@@ -104,7 +105,8 @@ public class Encode {
         return MerkleRoot;
     }
 
-    public void main() {
-        Split();
-    }
+//    public static void main(String args[]) {
+//    Encode e=new Encode("/home/chetan/Downloads/a1.txt","Chetan");
+//        e.Split();
+//    }
 }
