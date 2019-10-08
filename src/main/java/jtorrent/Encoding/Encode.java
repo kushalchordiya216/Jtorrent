@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
@@ -19,13 +20,14 @@ public class Encode {
     // TODO: write to proper path
     private File file, metadata;
     private BufferedReader reader;
-    private HashMap<String, String> MetaDataHash;
+    private HashMap<String, String> MetaDataHash = new HashMap<String, String>();
     private String tempDirectory = null; // tempoarary directory name where encoded pieces will be stored
 
     public Encode(String filename, String rootDirectory) {
         file = new File(filename);
-        this.tempDirectory = rootDirectory + "temp/";
-        metadata = new File(this.tempDirectory + filename + ".metadata"); // metadatafile created inside temp directory
+        this.tempDirectory = Paths.get(rootDirectory, filename).toString();
+        metadata = new File(Paths.get(this.tempDirectory, filename + ".metadata").toString()); // metadatafile created
+        // inside temp directory
         try {
             FileReader fileReader = new FileReader(file);
             reader = new BufferedReader(fileReader);
@@ -88,7 +90,7 @@ public class Encode {
     private void writePiece(String name, byte[] piece) {
         File newFile = new File(name);
         try {
-            OutputStream pieceWriter = new FileOutputStream(this.tempDirectory + newFile);
+            OutputStream pieceWriter = new FileOutputStream(newFile);
             pieceWriter.write(piece);
             pieceWriter.close();
         } catch (IOException e) {
@@ -104,7 +106,8 @@ public class Encode {
         return MerkleRoot;
     }
 
-    public void main() {
-        Split();
+    public static void main(String[] args) {
+        Encode encode = new Encode("file.txt", "/home/kushal/.P2P");
+        encode.Split();
     }
 }

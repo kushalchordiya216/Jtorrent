@@ -11,8 +11,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import com.google.protobuf.compiler.PluginProtos.CodeGeneratorResponse.File;
-
 import jtorrent.Communication.Requests.*;
 import jtorrent.Encoding.*;
 
@@ -22,8 +20,8 @@ public class Peer {
     private Socket trackerEndpoint = null;
     private ObjectOutputStream writeToTracker = null;
     private ObjectInputStream readFromTracker = null;
-    private String trackerIP = null;
-    private UserProfile userProfile = null;
+    private String trackerIP = new String("localhost");
+    private UserProfile userProfile = new UserProfile();
     HashMap<Integer, String[]> changedFiles = new HashMap<Integer, String[]>();
     private ThreadPoolExecutor leechExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(3);
     private ThreadPoolExecutor seedExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(3);
@@ -51,8 +49,8 @@ public class Peer {
      */
     public void Connect() throws IOException {
         String type = null;
-        boolean validChoice = false;
-        while (!validChoice) {
+        boolean validChoice = false, loginStatus = false;
+        while (!validChoice && !loginStatus) {
             System.out.println("1.Login\n2.Register");
             String choice = sc.nextLine();
             this.userProfile.getCredentials();
@@ -74,8 +72,6 @@ public class Peer {
                 this.userProfile.getPassword());
         System.out.println("Logging in ....");
         writeToTracker.writeObject(connectRequest);
-        // TODO: receive login confirmation from tracker
-        // TODO: initialize dataroot directories according to username
     }
 
     public void Update() {

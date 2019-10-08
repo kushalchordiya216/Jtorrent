@@ -6,7 +6,8 @@ import java.util.Scanner;
  * perform profile actions like logging in, signing up, loggin out, etc.
  */
 public class UserProfile {
-    private String username, password;
+    private String username = new String("");
+    private String password = new String("");
     Scanner sc = new Scanner(System.in);
 
     public String getUsername() {

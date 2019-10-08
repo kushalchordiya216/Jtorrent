@@ -17,20 +17,18 @@ import jtorrent.Database.*;
 public class PeerThread implements Runnable {
     private Socket socket;
     private Tracker tracker;
-    private String username, password;
     private ObjectInputStream readFromPeer;
     private ObjectOutputStream writeToPeer;
+    private String username, password;
     private UserTable userTable = new UserTable();
     private FilesTable filesTable = new FilesTable();
 
     private ExecutorService executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(3);
 
-    PeerThread(Socket socket, Tracker tracker, String username, String password) {
+    PeerThread(Socket socket, Tracker tracker) {
         try {
             this.socket = socket;
             this.tracker = tracker;
-            this.username = username;
-            this.password = password;
             this.readFromPeer = new ObjectInputStream(socket.getInputStream());
             this.writeToPeer = new ObjectOutputStream(socket.getOutputStream());
         } catch (IOException e) {
@@ -76,20 +74,29 @@ public class PeerThread implements Runnable {
 
     public void processConnectRequest(ConnectRequest connectRequest) {
         connectRequest.setHostName(this.socket.getInetAddress().toString());
+        Integer result = null;
         switch (connectRequest.getConnectionType()) {
         case "REGISTER":
             connectRequest.setActive(true);
-            userTable.Create(connectRequest);
+            result = userTable.Create(connectRequest);
             break;
         case "LOGIN":
             connectRequest.setActive(true);
-            userTable.Update(connectRequest);
+            result = userTable.Update(connectRequest);
             break;
         case "DISCONNECT":
             connectRequest.setActive(false);
-            userTable.Update(connectRequest);
+            result = userTable.Update(connectRequest);
             this.removeNode();
             break;
+        }
+        if (result == 0) {
+            System.out.println("Invalid credentials!\n");
+        } else {
+            System.out.println("login successful");
+            this.username = connectRequest.getUsername();
+            this.password = connectRequest.getPassword();
+            this.tracker.addToPeerIndex(this.username, this);
         }
     }
     // TODO: send appropriate response after connecting
@@ -104,22 +111,17 @@ public class PeerThread implements Runnable {
         Thread.currentThread().interrupt();
     }
 
-    public void processRequest() {
-        try {
-            Request request = (Request) readFromPeer.readObject();
-            switch (request.getRequestType()) {
-            case "LEECH":
-                processLeechRequest((LeechRequest) request);
-                break;
-            case "CONNECT":
-                processConnectRequest((ConnectRequest) request);
-                break;
-            case "UPDATE":
-                processUpdateRequest((UpdateRequest) request);
-                break;
-            }
-        } catch (ClassNotFoundException | IOException e) {
-            e.printStackTrace();
+    public void processRequest(Request request) {
+        switch (request.getRequestType()) {
+        case "LEECH":
+            processLeechRequest((LeechRequest) request);
+            break;
+        case "CONNECT":
+            processConnectRequest((ConnectRequest) request);
+            break;
+        case "UPDATE":
+            processUpdateRequest((UpdateRequest) request);
+            break;
         }
     }
 
@@ -130,9 +132,20 @@ public class PeerThread implements Runnable {
     @Override
     public void run() {
         while (this.socket.isConnected()) {
-            executor.submit(() -> {
-                processRequest();
-            });
+            try {
+                Request request = (Request) readFromPeer.readObject();
+                executor.submit(() -> {
+                    processRequest(request);
+                });
+            } catch (ClassNotFoundException | IOException e1) {
+                e1.printStackTrace();
+            }
+            // try {
+            // Thread.sleep(5000);
+            // } catch (InterruptedException e) {
+            // System.out.println("lol");
+            // e.printStackTrace();
+            // }
         }
     }
 
@@ -154,5 +167,9 @@ public class PeerThread implements Runnable {
 
     public String getPasssword() {
         return this.password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }
