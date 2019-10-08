@@ -1,19 +1,13 @@
 package jtorrent.Client;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-
 import jtorrent.Communication.P2PMessages.*;
+import jtorrent.Encoding.Decode;
 
 /**
  * Class to handle file leeching creates a serversocket that listens for
@@ -24,23 +18,26 @@ import jtorrent.Communication.P2PMessages.*;
  * @param rootDirectory the root of the directory where users files are to be
  *                      stored
  */
-public class FileLeecher {
+public class FileLeecher implements Runnable {
 
     private String merkleRoot = null;
     private ServerSocket serverSocket = null;
     private ArrayList<Socket> peerSockets = null;
     private ArrayList<String> pendingPieces = new ArrayList<String>();
     private HashMap<String, String> metadataHash = null;
-    private String directoryDataRoot = null;
+    private String rootDirectory = null;
+    private Decode metaFileDecoder = null;
 
-    public FileLeecher(String merkleRoot, HashMap<String, String> metadataHash, String directoryRoot) {
+    public FileLeecher(String merkleRoot, HashMap<String, String> metadataHash, String rootDirectory,
+            Decode metaFileDecoder) {
         this.merkleRoot = merkleRoot;
         this.metadataHash = metadataHash;
-        this.directoryDataRoot = directoryRoot + this.merkleRoot + "/Data/";
+        this.rootDirectory = Paths.get(rootDirectory, this.merkleRoot).toString();
+        this.metadataHash.remove("merkleRoot");
+        this.metadataHash.remove("Name");
+        this.metadataHash.remove("Tracker");
         this.pendingPieces = (ArrayList<String>) metadataHash.values();
-        this.pendingPieces.removeAll(new ArrayList<String>(Arrays.asList("merkleRoot", "Tracker", "name")));
-        // metadatahash also includes info about merkleRoot, name and Tracker but that
-        // is not needed
+        this.metaFileDecoder = metaFileDecoder;
         try {
             this.serverSocket = new ServerSocket(0);
         } catch (IOException e) {
@@ -48,31 +45,12 @@ public class FileLeecher {
         }
     }
 
-    synchronized public void updatePendingPieces(String pieceId) {
-        this.pendingPieces.remove(pieceId);
-        // TODO: only one thread changes pendingPieces list at a given time
+    synchronized public void updatePendingPieces(String pieceHash) {
+        this.pendingPieces.remove(pieceHash);
     }
 
     public Integer getPortNo() {
         return this.serverSocket.getLocalPort();
-    }
-
-    public void leech() {
-        while (true) {
-            Socket socket;
-            try {
-                if (this.peerSockets.size() <= 10) {
-                    socket = this.serverSocket.accept();
-                    peerSockets.add(socket);
-                    this.BalanceLoad();
-                    new Thread(() -> {
-                        Listener(socket);
-                    });
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     public void BalanceLoad() {
@@ -100,6 +78,22 @@ public class FileLeecher {
         }
     }
 
+    synchronized public void writePiecetoDisk(String pieceId, String name, byte[] content) {
+        // TODO: test if it works when this is method is not synchronized
+        File newPiece = Paths.get(this.rootDirectory, name).toFile();
+        if (!newPiece.exists()) {
+            try {
+                newPiece.createNewFile();
+                OutputStream writeToFile = new FileOutputStream(newPiece);
+                writeToFile.write(content);
+                updatePendingPieces(pieceId);
+                writeToFile.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     public void Listener(Socket socket) {
         while (!socket.isClosed() && !pendingPieces.isEmpty()) {
             try {
@@ -109,10 +103,10 @@ public class FileLeecher {
                 if (messageType.equals("PIECE")) {
                     // peer is sending over a piece
                     Piece piece = (Piece) message;
-                    String pieceId = piece.getPieceId();
-                    if (pendingPieces.contains(pieceId)) {
-                        String filename = this.metadataHash.get(pieceId);
-                        writePiecetoDisk(pieceId, filename, piece.getContent());
+                    String pieceHash = piece.getPieceHash();
+                    if (pendingPieces.contains(pieceHash)) {
+                        String filename = this.metadataHash.get(pieceHash);
+                        writePiecetoDisk(pieceHash, filename, piece.getContent());
                     }
                 } else if (messageType.equals("DISCONNECT")) {
                     // Peer is disconnecting
@@ -128,19 +122,27 @@ public class FileLeecher {
         }
     }
 
-    synchronized public void writePiecetoDisk(String pieceId, String name, byte[] content) {
-        // TODO: test if it works when this is method is not synchronized
-        File newPiece = Paths.get(this.directoryDataRoot, name).toFile();
-        if (!newPiece.exists()) {
+    public void leech() {
+        while (this.pendingPieces.size() != 0) {
+            Socket socket;
             try {
-                newPiece.createNewFile();
-                OutputStream writeToFile = new FileOutputStream(newPiece);
-                writeToFile.write(content);
-                updatePendingPieces(pieceId);
-                writeToFile.close();
+                if (this.peerSockets.size() <= 10) {
+                    socket = this.serverSocket.accept();
+                    peerSockets.add(socket);
+                    this.BalanceLoad();
+                    new Thread(() -> {
+                        Listener(socket);
+                    });
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    @Override
+    public void run() {
+        leech();
+        this.metaFileDecoder.Merge();
     }
 }

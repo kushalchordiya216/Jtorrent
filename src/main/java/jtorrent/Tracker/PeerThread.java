@@ -89,6 +89,10 @@ public class PeerThread implements Runnable {
             this.removePeer();
             break;
         }
+        if (!result.equals(0)) {
+            this.setUsername(connectRequest.getUsername());
+            this.setPassword(connectRequest.getPassword());
+        }
     }
 
     public void removePeer() {
@@ -131,8 +135,13 @@ public class PeerThread implements Runnable {
                         System.out.println("Error processing incoming request");
                     }
                 });
-            } catch (ClassNotFoundException | IOException e1) {
-                e1.printStackTrace();
+            } catch (ClassNotFoundException | IOException e) {
+                System.out.println(this.username + " has disconnected!");
+                try {
+                    Thread.currentThread().join();
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                }
             }
         }
     }

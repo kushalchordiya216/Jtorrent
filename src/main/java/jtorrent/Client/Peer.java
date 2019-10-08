@@ -1,16 +1,10 @@
 package jtorrent.Client;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.Socket;
-import java.util.HashMap;
-import java.util.Scanner;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.concurrent.*;
 import jtorrent.Communication.Requests.*;
 import jtorrent.Encoding.*;
 
@@ -22,12 +16,12 @@ public class Peer {
     private ObjectInputStream readFromTracker = null;
     private String trackerIP = new String("localhost");
     private UserProfile userProfile = new UserProfile();
+    public String rootDirectory = null;
     HashMap<Integer, String[]> changedFiles = new HashMap<Integer, String[]>();
+
     private ThreadPoolExecutor leechExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(3);
     private ThreadPoolExecutor seedExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(3);
-    private ScheduledExecutorService scheduledExecutorService = (ScheduledExecutorService) Executors
-            .newScheduledThreadPool(1);
-    public String rootDirectory = null;
+    private ScheduledExecutorService updateExecutor = (ScheduledExecutorService) Executors.newScheduledThreadPool(1);
 
     public Peer() {
         try {
@@ -91,24 +85,20 @@ public class Peer {
         fileIndexManager = null; // ? it'll get garbage connected nevertheless
     }
 
-    public void requestFile() {
-        System.out.println("Enter metadatafile location");
-        String metaFileName = sc.nextLine();
-        Decode decode = new Decode(metaFileName, this.rootDirectory);
-        LeechFile(metaFileName, decode);
-        decode.Merge();
-    }
-
-    public void LeechFile(String metaFileName, Decode metaFileDecoder) {
+    public void leechFile() {
         try {
-            String merkleRoot = metaFileDecoder.getMerkleRoot();
-            FileLeecher fileLeecher = new FileLeecher(merkleRoot, metaFileDecoder.getMetaDataHash(), rootDirectory); // start
+            System.out.println("Enter metadatafile location");
+            String metaFileName = sc.nextLine();
+            Decode decode = new Decode(metaFileName, this.rootDirectory);
+            String merkleRoot = decode.getMerkleRoot();
+
+            FileLeecher fileLeecher = new FileLeecher(merkleRoot, decode.getMetaDataHash(), rootDirectory, decode); // start
             LeechRequest leechRequest = new LeechRequest(fileLeecher.getPortNo(), merkleRoot); // ask for files on
             this.writeToTracker.writeObject(leechRequest);
-            Integer numSeeders = (Integer) this.readFromTracker.readObject();
-            System.out.println("there are " + numSeeders + " seeders currently available");
-            fileLeecher.leech();
+            this.leechExecutor.submit((fileLeecher));
 
+            Integer numSeeders = (Integer) this.readFromTracker.readObject();
+            System.out.println("There are " + numSeeders + " seeders currently available");
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
@@ -128,26 +118,31 @@ public class Peer {
         Scanner sc = new Scanner(System.in);
         Peer peer = new Peer();
         try {
-            peer.Connect();
-            peer.scheduledExecutorService.scheduleAtFixedRate(() -> {
+            peer.Connect(); // connect to tracker endpoint by providing username and password
+            // TODO: if connect successful, intialize rootdirectory
+            // as(~/home/.P2P/{username}
+            peer.updateExecutor.scheduleAtFixedRate(() -> {
                 try {
                     peer.Update();
+                    // periodically send updates to tracker about files that have been added or
+                    // deleted
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }, 0, 5, TimeUnit.MINUTES);
+
             new Thread(() -> {
                 peer.SeedFile();
             });
 
             while (true) {
                 System.out.println("1.Request File\n2.Publish\n3.Exit");
+                System.out.println(
+                        "Note that you can request a total of 3 simultaneous leechs at a time, further than that will be queued!");
                 String choice = sc.nextLine();
                 switch (choice) {
                 case "1":
-                    peer.leechExecutor.submit(() -> {
-                        peer.requestFile();
-                    });
+                    peer.leechFile();
                     break;
                 case "2":
                     String fileName = sc.nextLine();
@@ -163,5 +158,14 @@ public class Peer {
             System.out.println("Error establishing connection with tracker");
         }
         sc.close();
+    }
+
+    public String getRootDirectory() {
+        return rootDirectory;
+    }
+
+    public void setRootDirectory(String rootDirectory) {
+        this.rootDirectory = Paths.get(System.getProperty("user.home"), ".P2P", this.userProfile.getUsername())
+                .toString();
     }
 }

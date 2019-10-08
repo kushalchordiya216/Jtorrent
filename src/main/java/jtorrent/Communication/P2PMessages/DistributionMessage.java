@@ -4,7 +4,7 @@ package jtorrent.Communication.P2PMessages;
  * This message is sent by leecher to seeders to inform them what parts of the
  * file they're supposed to send
  * 
- * @param pieceIds Array of pieceIds that are assigned to the peer
+ * @param pieceHashes Array of pieceIds that are assigned to the peer
  */
 public class DistributionMessage implements Message {
 
@@ -14,10 +14,10 @@ public class DistributionMessage implements Message {
     private static final long serialVersionUID = 1L;
 
     private final String messageType = "DISTRIBUTION";
-    private String[] pieceIds = null;
+    private String[] pieceHashes = null;
 
     public DistributionMessage(String[] pieceIds) {
-        this.pieceIds = pieceIds;
+        this.pieceHashes = pieceIds;
     }
 
     @Override
@@ -25,8 +25,8 @@ public class DistributionMessage implements Message {
         return messageType;
     }
 
-    public String[] getPieceIds() {
-        return this.pieceIds;
+    public String[] getPieceHashes() {
+        return this.pieceHashes;
     }
 
 }

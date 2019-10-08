@@ -1,18 +1,18 @@
 package jtorrent.Communication.P2PMessages;
 
 /**
- * @param content the byte[] array content of the piece
- * @param pieceId the Id of the piece according to relevant metadata
+ * @param content   the byte[] array content of the piece
+ * @param pieceHash the Id of the piece according to relevant metadata
  */
 public class Piece implements Message {
 
     private static final long serialVersionUID = 1L;
     private final String messageType = "PIECE";
     private byte[] content = null;
-    private String pieceId = null;
+    private String pieceHash = null;
 
     public Piece(String pieceId, byte[] content) {
-        this.pieceId = pieceId;
+        this.pieceHash = pieceId;
         this.content = content;
     }
 
@@ -25,8 +25,8 @@ public class Piece implements Message {
         return content;
     }
 
-    public String getPieceId() {
-        return pieceId;
+    public String getPieceHash() {
+        return pieceHash;
     }
 
 }
