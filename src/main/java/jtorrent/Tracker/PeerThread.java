@@ -61,7 +61,8 @@ public class PeerThread implements Runnable {
             while (rs.next()) {
                 peerIps.add(rs.getString("currentIP"));
             }
-        } catch (SQLException e) {
+            this.writeToPeer.writeObject(peerIps.size());
+        } catch (SQLException | IOException e) {
             e.printStackTrace();
         }
         this.tracker.requestSeed(peerIps, leechRequest.getHostName(), leechRequest.getPort(),

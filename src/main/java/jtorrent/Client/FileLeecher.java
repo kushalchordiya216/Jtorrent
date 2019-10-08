@@ -8,6 +8,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -129,15 +130,17 @@ public class FileLeecher {
 
     synchronized public void writePiecetoDisk(String pieceId, String name, byte[] content) {
         // TODO: test if it works when this is method is not synchronized
-        // TODO: write content of piece to appropriate file name in {directoryRootData}
-        File newPiece = new File(this.directoryDataRoot + name);
-        try {
-            OutputStream writeToFile = new FileOutputStream(newPiece);
-            writeToFile.write(content);
-            updatePendingPieces(pieceId);
-            writeToFile.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        File newPiece = Paths.get(this.directoryDataRoot, name).toFile();
+        if (!newPiece.exists()) {
+            try {
+                newPiece.createNewFile();
+                OutputStream writeToFile = new FileOutputStream(newPiece);
+                writeToFile.write(content);
+                updatePendingPieces(pieceId);
+                writeToFile.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

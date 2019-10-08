@@ -94,21 +94,22 @@ public class Peer {
     public void requestFile() {
         System.out.println("Enter metadatafile location");
         String metaFileName = sc.nextLine();
-        LeechFile(metaFileName);
-        Decode decode = new Decode(metaFileName);
+        Decode decode = new Decode(metaFileName, this.rootDirectory);
+        LeechFile(metaFileName, decode);
         decode.Merge();
     }
 
-    public void LeechFile(String metaFileName) {
+    public void LeechFile(String metaFileName, Decode metaFileDecoder) {
         try {
-            Decode metaFileDecoder = new Decode(metaFileName);
             String merkleRoot = metaFileDecoder.getMerkleRoot();
             FileLeecher fileLeecher = new FileLeecher(merkleRoot, metaFileDecoder.getMetaDataHash(), rootDirectory); // start
             LeechRequest leechRequest = new LeechRequest(fileLeecher.getPortNo(), merkleRoot); // ask for files on
             this.writeToTracker.writeObject(leechRequest);
+            Integer numSeeders = (Integer) this.readFromTracker.readObject();
+            System.out.println("there are " + numSeeders + " seeders currently available");
             fileLeecher.leech();
-            // TODO: return info from tracker about how many peers have the file
-        } catch (IOException e) {
+
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
     }
@@ -150,7 +151,7 @@ public class Peer {
                     break;
                 case "2":
                     String fileName = sc.nextLine();
-                    Encode encode = new Encode(fileName, peer.rootDirectory);
+                    Encode encode = new Encode(fileName, peer.rootDirectory, peer.trackerEndpoint);
                     encode.Split();
                     break;
                 case "3":

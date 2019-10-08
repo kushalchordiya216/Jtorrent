@@ -1,13 +1,7 @@
 package jtorrent.Encoding;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
+import java.io.*;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -16,57 +10,76 @@ import java.util.Map.Entry;
 import com.google.common.hash.Hashing;
 
 public class Encode {
-    // TODO: test out all functionalities
-    // TODO: write to proper path
-    private File file, metadata;
-    private BufferedReader reader;
+    private File file, metadata, newFile, tempDirectory;
+    private FileInputStream reader;
+    private FileOutputStream writer;
     private HashMap<String, String> MetaDataHash = new HashMap<String, String>();
-    private String tempDirectory = null; // tempoarary directory name where encoded pieces will be stored
+    private String tempDirectoryPath = null, rootDirectoryPath; // tempoarary directory name where encoded pieces will
+                                                                // be stored
+    private Socket trackerEndpoint;
 
-    public Encode(String filename, String rootDirectory) {
+    public Encode(String filename, String rootDirectory, Socket socket) {
         file = new File(filename);
-        this.tempDirectory = Paths.get(rootDirectory, filename).toString();
-        metadata = new File(Paths.get(this.tempDirectory, filename + ".metadata").toString()); // metadatafile created
-        // inside temp directory
+        this.trackerEndpoint = socket;
+        this.newFile = new File("newFile.txt");
+        this.rootDirectoryPath = rootDirectory;
+        this.tempDirectoryPath = Paths.get(rootDirectory, filename).toString();
+        this.tempDirectory = new File(this.tempDirectoryPath);
+        if (!this.tempDirectory.exists()) {
+            this.tempDirectory.mkdirs();
+        }
+        metadata = new File(Paths.get(this.tempDirectoryPath, filename + ".metadata").toString()); // metadatafile
+        if (!metadata.exists()) {
+            try {
+                metadata.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } // created
         try {
-            FileReader fileReader = new FileReader(file);
-            reader = new BufferedReader(fileReader);
+            reader = new FileInputStream(file);
+            writer = new FileOutputStream(newFile);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
     }
 
     public void Split() {
-        int index = 0; // index for a piece, this will be used to construct the metadataHashmap
-        int readChar = 0;
-        do {
-            byte[] piece = new byte[1024 * 1024];
-            int byteIndex = 0; // read data byte by byte, so that no extra garbage gets appended at the end
+        try {
+            long totalFileLength = file.length();
+            long index = 0;
+            long numPieces = totalFileLength / (1024 * 1024);
+            int remainder = (int) totalFileLength % (1024 * 1024);
             do {
-                try {
-                    readChar = reader.read();
-                    piece[byteIndex] = (byte) readChar;
-                    byteIndex++;
-                } catch (IOException e) {
-                    System.out.println("Error while reading into file!\n");
-                    return;
-                }
-            } while (readChar != -1 && byteIndex < 1024 * 1024);
-            String hash = Hashing.sha256().hashBytes(piece).toString();
-            this.writePiece(hash, piece);
-            MetaDataHash.put(Integer.toString(index), hash);
+                byte[] piece = new byte[10];
+                reader.read(piece);
+                writer.write(piece);
+                String hash = Hashing.sha256().hashBytes(piece).toString();
+                this.writePiece(hash, piece);
+                MetaDataHash.put(Long.toString(index), hash);
+                index++;
+                numPieces--;
+            } while (numPieces > 0);
+            byte[] lastPiece = new byte[remainder];
+            reader.read(lastPiece);
+            reader.close();
+            String hash = Hashing.sha256().hashBytes(lastPiece).toString();
+            this.writePiece(hash, lastPiece);
+            MetaDataHash.put(Long.toString(index), hash);
             index++;
-        } while (readChar != -1);
-        String merkleRoot = createMerkleRoot(MetaDataHash); // once all pieces are created, obtain merkleRoot of the
-        writeMetaData(merkleRoot); // write metadata file
-        File tempDirectoryFolder = new File(this.tempDirectory);
-        tempDirectoryFolder.renameTo(new File(createMerkleRoot(MetaDataHash))); // rename tempoaray folder with
-                                                                                // merkleRootfolder
+
+            String merkleRoot = createMerkleRoot(MetaDataHash);
+            writeMetaData(merkleRoot);
+
+            this.tempDirectory.renameTo(new File(Paths.get(this.rootDirectoryPath, merkleRoot).toString()));
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private String getTrackerInfo() {
-        // TODO:return tracker IP/port
-        return null;
+        return this.trackerEndpoint.getInetAddress().toString();
     }
 
     private void writeMetaData(String merkleRoot) {
@@ -88,7 +101,7 @@ public class Encode {
      * a file on local filesystem
      */
     private void writePiece(String name, byte[] piece) {
-        File newFile = new File(name);
+        File newFile = new File(Paths.get(this.tempDirectoryPath, name).toString());
         try {
             OutputStream pieceWriter = new FileOutputStream(newFile);
             pieceWriter.write(piece);
@@ -107,7 +120,13 @@ public class Encode {
     }
 
     public static void main(String[] args) {
-        Encode encode = new Encode("file.txt", "/home/kushal/.P2P");
-        encode.Split();
+        Socket socket;
+        try {
+            socket = new Socket("localhost", 8080);
+            Encode encode = new Encode("flow.txt", "/home/kushal/.P2P/myuser", socket);
+            encode.Split();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

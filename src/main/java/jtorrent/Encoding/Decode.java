@@ -1,53 +1,74 @@
 package jtorrent.Encoding;
 
 import java.io.*;
+import java.nio.file.Paths;
 import java.util.HashMap;
 
 public class Decode {
     private HashMap<String, String> metaDataHash;
+    private String merkleRoot;
+    private String fileName, metaFileName;
+    private String rootDirectory, currentDirectory;
+    private File metaFile, file;
 
-    // TODO: Read from proper path
-    // TODO: Create copy of metadata in proper path
-    public Decode(String metaFile) {
-        File metaFile1 = new File(metaFile);
-        ObjectInputStream ois;
+    public Decode(String metaFileName, String rootDirectory) {
         try {
-            ois = new ObjectInputStream(new FileInputStream(metaFile1));
-            this.metaDataHash = (HashMap<String, String>) ois.readObject();
-            ois.close();
-        } catch (IOException | ClassNotFoundException e1) {
+            this.metaFileName = metaFileName;
+            this.metaFile = new File(this.metaFileName);
+            this.currentDirectory = metaFile.getParent();
+            ObjectInputStream readMetaFile = new ObjectInputStream(new FileInputStream(this.metaFile));
+            try {
+                this.metaDataHash = (HashMap<String, String>) readMetaFile.readObject();
+            } catch (Exception e) {
+                System.out.println("Corrupted metadata!\nUse valid metadata file");
+                System.exit(-1);
+            }
+            this.merkleRoot = this.metaDataHash.get("merkleRoot");
+            this.fileName = this.metaDataHash.get("Name");
+            this.file = Paths.get(this.currentDirectory, this.fileName).toFile();
+            this.rootDirectory = rootDirectory;
+            readMetaFile.close();
+        } catch (IOException e) {
             System.out.println("Error reading metadata file");
-            e1.printStackTrace();
+            e.printStackTrace();
         }
     }
 
-    public String getMerkleRoot() {
-        return this.metaDataHash.get("merkleRoot");
-    }
-
     public void Merge() {
-        File file = new File(this.metaDataHash.get("Name"));
-        OutputStream outputStream;
         try {
-            outputStream = new FileOutputStream(file);
-            for (int i = 0; i < metaDataHash.size(); i++) {
+            OutputStream outputStream = new FileOutputStream(this.file);
+            for (int i = 0; i < metaDataHash.size() - 3; i++) {
                 byte[] content = read(this.metaDataHash.get(Integer.toString(i)));
-                outputStream.write(content);
-                outputStream.flush();
+                for (byte c : content) {
+                    if (c != 0) {
+                        outputStream.write(c);
+                    }
+                }
             }
             outputStream.close();
+            CreateMetaFileCopy();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public HashMap<String, String> getMetaDataHash() {
-        return this.metaDataHash;
+    public void CreateMetaFileCopy() {
+        File metaFileCopy = Paths.get(this.rootDirectory, this.metaFileName).toFile();
+        if (!metaFileCopy.exists()) {
+            try {
+                metaFileCopy.createNewFile();
+                ObjectOutputStream metaFileWriter = new ObjectOutputStream(new FileOutputStream(metaFileCopy));
+                metaFileWriter.writeObject(this.metaDataHash);
+                metaFileWriter.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private byte[] read(String fileName) {
         byte[] pieceContent = new byte[1024 * 1024];
-        File piece = new File(fileName);
+        File piece = Paths.get(this.rootDirectory, fileName).toFile();
         InputStream inputStream;
         try {
             inputStream = new FileInputStream(piece);
@@ -57,5 +78,17 @@ public class Decode {
             e.printStackTrace();
         }
         return pieceContent;
+    }
+
+    public String getMerkleRoot() {
+        return this.merkleRoot;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public HashMap<String, String> getMetaDataHash() {
+        return this.metaDataHash;
     }
 }
