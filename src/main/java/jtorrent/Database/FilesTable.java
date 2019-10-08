@@ -22,7 +22,7 @@ public class FilesTable implements CRUDInterface {
         UpdateRequest updateRequest = (UpdateRequest) request;
         try {
             stmt = connection
-                    .prepareStatement("INSERT INTO FileOwners(username,currentIP,merkleRoot,active) values(?,?,?,?)");
+                    .prepareStatement("INSERT INTO Files(username,currentIP,merkleRoot,active) values(?,?,?,?)");
             stmt.setString(1, updateRequest.getUsername());
             stmt.setString(2, updateRequest.getHostName());
             stmt.setBoolean(4, true);
@@ -30,7 +30,6 @@ public class FilesTable implements CRUDInterface {
             System.out.println(updateRequest.getUsername() + "@" + updateRequest.getHostName()
                     + " tried to add a file entry that broke sql contraints");
         }
-
         for (String merkleRoot : updateRequest.getAddedFiles()) {
             try {
                 stmt.setString(3, merkleRoot);
@@ -67,19 +66,15 @@ public class FilesTable implements CRUDInterface {
     public void Delete(Request request) {
         UpdateRequest updateRequest = (UpdateRequest) request;
         try {
-            stmt = connection.prepareStatement("DELETE FROM FileOwners WHERE username=? AND merkleRoot=?");
+            stmt = connection.prepareStatement("DELETE FROM Files WHERE username=? AND merkleRoot=?");
             stmt.setString(1, updateRequest.getUsername());
-            stmt.setString(2, updateRequest.getHostName());
-            stmt.setBoolean(4, true);
-
         } catch (SQLException e) {
             System.out.println(updateRequest.getUsername() + "@" + updateRequest.getHostName()
                     + " tried to add a file entry that broke sql contraints");
         }
-
         for (String merkleRoot : updateRequest.getRemovedFiles()) {
             try {
-                stmt.setString(3, merkleRoot);
+                stmt.setString(2, merkleRoot);
                 stmt.executeUpdate();
             } catch (SQLException e) {
                 System.out.println(updateRequest.getUsername() + "@" + updateRequest.getHostName()

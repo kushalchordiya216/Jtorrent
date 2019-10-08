@@ -13,20 +13,35 @@ public class FileIndexManager {
 	String rootDirectory = null;
 	String[] addedFiles, removedFiles;
 	File indexFile;
+	File folder;
+	ObjectOutputStream fileWriter;
 
 	public FileIndexManager(String username) {
-		this.rootDirectory = System.getProperty("user.home") + "/.P2P/" + username + "/";
+		this.rootDirectory = System.getProperty("user.home") + "/.P2P/" + username;
+
+		folder = new File(rootDirectory);
+		if (!(folder.exists() && folder.isDirectory())) {
+			folder.mkdirs();
+		}
+		try {
+			List<String> l = new ArrayList<String>();
+			this.indexFile = new File(this.rootDirectory + "/indexFile.ser");
+			if (!this.indexFile.exists()) {
+				this.indexFile.createNewFile();
+				fileWriter = new ObjectOutputStream(new FileOutputStream(this.indexFile, false));
+				fileWriter.writeObject(l);
+				fileWriter.close();
+			}
+			fileWriter = new ObjectOutputStream(new FileOutputStream(this.indexFile, false));
+			fileWriter.writeObject(l);
+			fileWriter.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void CheckForChanges() {
 		try {
-			File folder = new File(rootDirectory);
-			if (folder.exists() && folder.isDirectory()) {
-				this.indexFile = new File(this.rootDirectory + "indexFile.ser");
-			} else {
-				folder.mkdir();
-				this.indexFile = new File(this.rootDirectory + "indexFile.ser");
-			}
 			String files[] = folder.list();
 			List<String> newList = new ArrayList<String>(Arrays.asList(files));
 			newList.remove("indexFile.ser");
@@ -39,8 +54,10 @@ public class FileIndexManager {
 			List<String> removeList = new ArrayList<String>(prevList);
 			removeList.removeAll(newList);
 
-			this.addedFiles = (String[]) addList.toArray();
-			this.removedFiles = (String[]) removeList.toArray();
+			this.addedFiles = new String[addList.size()];
+			this.removedFiles = new String[removeList.size()];
+			this.addedFiles = addList.toArray(this.addedFiles);
+			this.removedFiles = removeList.toArray(this.removedFiles);
 
 			ObjectOutputStream fileWriter = new ObjectOutputStream(new FileOutputStream(this.indexFile, false));
 			fileWriter.writeObject(newList);
@@ -59,5 +76,4 @@ public class FileIndexManager {
 	public String[] getRemovedFiles() {
 		return this.removedFiles;
 	}
-
 }

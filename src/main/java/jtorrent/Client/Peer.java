@@ -46,45 +46,49 @@ public class Peer {
      * @param username username of the peer
      * @param password password of the user
      * @throws IOException
+     * @throws ClassNotFoundException
      */
     public void Connect() throws IOException {
         String type = null;
-        boolean validChoice = false, loginStatus = false;
-        while (!validChoice && !loginStatus) {
+        Integer loginStatus = 0;
+        while (loginStatus.equals(0)) {
             System.out.println("1.Login\n2.Register");
             String choice = sc.nextLine();
             this.userProfile.getCredentials();
             switch (choice) {
             case "1":
                 type = "LOGIN";
-                validChoice = true;
                 break;
             case "2":
                 type = "REGISTER";
-                validChoice = true;
                 break;
             default:
-                System.out.println("ENTER VALID CHOICE!");
+                type = "REGISTER";
                 break;
             }
+            ConnectRequest connectRequest = new ConnectRequest(8080, type, this.userProfile.getUsername(),
+                    this.userProfile.getPassword());
+            System.out.println("Logging in ....");
+            writeToTracker.writeObject(connectRequest);
+            try {
+                loginStatus = (Integer) this.readFromTracker.readObject();
+                if (loginStatus.equals(0)) {
+                    System.out.println(
+                            "Given credetials are invalid!\nIf you're registering for the first time this means the username is taken");
+                }
+            } catch (ClassNotFoundException e) {
+                System.out.println("unexpected datatype returned from tracker");
+            }
         }
-        ConnectRequest connectRequest = new ConnectRequest(8080, type, this.userProfile.getUsername(),
-                this.userProfile.getPassword());
-        System.out.println("Logging in ....");
-        writeToTracker.writeObject(connectRequest);
     }
 
-    public void Update() {
-        try {
-            FileIndexManager fileIndexManager = new FileIndexManager(this.userProfile.getUsername());
-            fileIndexManager.CheckForChanges();
-            UpdateRequest updateRequest = new UpdateRequest(this.userProfile.getUsername(), null,
-                    fileIndexManager.getAddedFiles(), fileIndexManager.getRemovedFiles());
-            this.writeToTracker.writeObject(updateRequest);
-            fileIndexManager = null;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public void Update() throws IOException {
+        FileIndexManager fileIndexManager = new FileIndexManager(this.userProfile.getUsername());
+        fileIndexManager.CheckForChanges();
+        UpdateRequest updateRequest = new UpdateRequest(this.userProfile.getUsername(), null,
+                fileIndexManager.getAddedFiles(), fileIndexManager.getRemovedFiles());
+        this.writeToTracker.writeObject(updateRequest);
+        fileIndexManager = null; // ? it'll get garbage connected nevertheless
     }
 
     public void requestFile() {
@@ -125,7 +129,11 @@ public class Peer {
         try {
             peer.Connect();
             peer.scheduledExecutorService.scheduleAtFixedRate(() -> {
-                peer.Update();
+                try {
+                    peer.Update();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }, 0, 5, TimeUnit.MINUTES);
             new Thread(() -> {
                 peer.SeedFile();
@@ -144,9 +152,10 @@ public class Peer {
                     String fileName = sc.nextLine();
                     Encode encode = new Encode(fileName, peer.rootDirectory);
                     encode.Split();
+                    break;
                 case "3":
                     System.out.println("Going offline, all processes are being stopped");
-                    return;
+                    System.exit(0);
                 }
             }
         } catch (IOException e) {

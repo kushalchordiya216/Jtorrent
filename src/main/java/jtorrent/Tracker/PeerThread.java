@@ -1,15 +1,11 @@
 package jtorrent.Tracker;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.*;
 
 import jtorrent.Communication.Requests.*;
 import jtorrent.Database.*;
@@ -72,37 +68,30 @@ public class PeerThread implements Runnable {
                 leechRequest.getMerkleRoot());
     }
 
-    public void processConnectRequest(ConnectRequest connectRequest) {
+    public void processConnectRequest(ConnectRequest connectRequest) throws IOException {
         connectRequest.setHostName(this.socket.getInetAddress().toString());
         Integer result = null;
         switch (connectRequest.getConnectionType()) {
         case "REGISTER":
             connectRequest.setActive(true);
             result = userTable.Create(connectRequest);
+            this.writeToPeer.writeObject(result);
             break;
         case "LOGIN":
             connectRequest.setActive(true);
             result = userTable.Update(connectRequest);
+            this.writeToPeer.writeObject(result);
             break;
         case "DISCONNECT":
             connectRequest.setActive(false);
             result = userTable.Update(connectRequest);
-            this.removeNode();
+            this.removePeer();
             break;
         }
-        if (result == 0) {
-            System.out.println("Invalid credentials!\n");
-        } else {
-            System.out.println("login successful");
-            this.username = connectRequest.getUsername();
-            this.password = connectRequest.getPassword();
-            this.tracker.addToPeerIndex(this.username, this);
-        }
     }
-    // TODO: send appropriate response after connecting
 
-    public void removeNode() {
-        this.tracker.removeConnection(this);
+    public void removePeer() {
+        this.tracker.removeConnection(this.username, this);
         try {
             this.socket.close();
         } catch (IOException e) {
@@ -111,7 +100,7 @@ public class PeerThread implements Runnable {
         Thread.currentThread().interrupt();
     }
 
-    public void processRequest(Request request) {
+    public void processRequest(Request request) throws IOException {
         switch (request.getRequestType()) {
         case "LEECH":
             processLeechRequest((LeechRequest) request);
@@ -135,20 +124,22 @@ public class PeerThread implements Runnable {
             try {
                 Request request = (Request) readFromPeer.readObject();
                 executor.submit(() -> {
-                    processRequest(request);
+                    try {
+                        processRequest(request);
+                    } catch (IOException e) {
+                        System.out.println("Error processing incoming request");
+                    }
                 });
             } catch (ClassNotFoundException | IOException e1) {
                 e1.printStackTrace();
             }
-            // try {
-            // Thread.sleep(5000);
-            // } catch (InterruptedException e) {
-            // System.out.println("lol");
-            // e.printStackTrace();
-            // }
         }
     }
 
+    /*
+     * getter and setters may not be needed, but they're kept for now anyway just in
+     * case
+     */
     public Socket getSocket() {
         return socket;
     }

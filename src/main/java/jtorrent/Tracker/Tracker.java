@@ -34,10 +34,6 @@ public class Tracker {
         }
     }
 
-    public void removeConnection(PeerThread peerThread) {
-        connectedPeers.remove(peerThread);
-    }
-
     public void requestSeed(ArrayList<String> peers, String leecherIp, int port, String merkleRoot) {
         for (String peer : peers) {
             peerIndex.get(peer).sendRequest(new SeedRequest(leecherIp, port, merkleRoot));
@@ -46,6 +42,11 @@ public class Tracker {
 
     public void addToPeerIndex(String username, PeerThread peerThread) {
         this.peerIndex.put(username, peerThread);
+    }
+
+    public void removeConnection(String username, PeerThread peerThread) {
+        this.peerIndex.remove(username);
+        connectedPeers.remove(peerThread);
     }
 
     public static void main(String[] args) {
