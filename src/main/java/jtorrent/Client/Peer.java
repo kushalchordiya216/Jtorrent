@@ -79,10 +79,9 @@ public class Peer {
     public void Update() throws IOException {
         FileIndexManager fileIndexManager = new FileIndexManager(this.userProfile.getUsername());
         fileIndexManager.CheckForChanges();
-        UpdateRequest updateRequest = new UpdateRequest(this.userProfile.getUsername(), null,
+        UpdateRequest updateRequest = new UpdateRequest(this.userProfile.getUsername(),
                 fileIndexManager.getAddedFiles(), fileIndexManager.getRemovedFiles());
         this.writeToTracker.writeObject(updateRequest);
-        fileIndexManager = null; // ? it'll get garbage connected nevertheless
     }
 
     public void leechFile() {

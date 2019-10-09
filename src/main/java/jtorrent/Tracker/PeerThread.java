@@ -72,6 +72,7 @@ public class PeerThread implements Runnable {
     public void processConnectRequest(ConnectRequest connectRequest) throws IOException {
         connectRequest.setHostName(this.socket.getInetAddress().toString());
         Integer result = null;
+        System.out.println("connection from " + connectRequest.getHostName());
         switch (connectRequest.getConnectionType()) {
         case "REGISTER":
             connectRequest.setActive(true);

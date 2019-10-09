@@ -8,11 +8,10 @@ public class UpdateRequest implements Request {
     private String hostname = null, username = null;
     private Integer port = null, filesizeMB = null;
 
-    public UpdateRequest(String username, Integer filesizeMB, String[] addedFiles, String[] removedFiles) {
+    public UpdateRequest(String username, String[] addedFiles, String[] removedFiles) {
         this.username = username;
         this.addedFiles = addedFiles;
         this.removedFiles = removedFiles;
-        this.filesizeMB = filesizeMB;
     }
 
     @Override

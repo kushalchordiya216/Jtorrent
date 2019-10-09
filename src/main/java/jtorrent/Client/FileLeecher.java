@@ -27,6 +27,7 @@ public class FileLeecher implements Runnable {
     private HashMap<String, String> metadataHash = null;
     private String rootDirectory = null;
     private Decode metaFileDecoder = null;
+    private Integer numPiecesRecieved = null;
 
     public FileLeecher(String merkleRoot, HashMap<String, String> metadataHash, String rootDirectory,
             Decode metaFileDecoder) {
@@ -38,6 +39,7 @@ public class FileLeecher implements Runnable {
         this.metadataHash.remove("Tracker");
         this.pendingPieces = (ArrayList<String>) metadataHash.values();
         this.metaFileDecoder = metaFileDecoder;
+        this.numPiecesRecieved = 0;
         try {
             this.serverSocket = new ServerSocket(0);
         } catch (IOException e) {
@@ -55,21 +57,13 @@ public class FileLeecher implements Runnable {
 
     public void BalanceLoad() {
         Integer numPeers = this.peerSockets.size();
-        Integer numPendingPieces = this.pendingPieces.size();
-        Integer loadPerPeer = numPendingPieces / numPeers;
         Integer index = 0;
         for (Socket socket : peerSockets) {
             DistributionMessage distributionMessage;
+            distributionMessage = new DistributionMessage(numPeers, index, this.numPiecesRecieved);
+            index++;
             try {
-                distributionMessage = new DistributionMessage(
-                        (String[]) pendingPieces.subList(index, index + loadPerPeer).toArray());
-                index += numPeers;
-            } catch (IndexOutOfBoundsException e) {
-                distributionMessage = new DistributionMessage((String[]) pendingPieces.toArray());
-            }
-            ObjectOutputStream writeToSeeder;
-            try {
-                writeToSeeder = new ObjectOutputStream(socket.getOutputStream());
+                ObjectOutputStream writeToSeeder = new ObjectOutputStream(socket.getOutputStream());
                 writeToSeeder.writeObject(distributionMessage);
                 writeToSeeder.close();
             } catch (IOException e) {
@@ -87,6 +81,7 @@ public class FileLeecher implements Runnable {
                 OutputStream writeToFile = new FileOutputStream(newPiece);
                 writeToFile.write(content);
                 updatePendingPieces(pieceId);
+                this.numPiecesRecieved++;
                 writeToFile.close();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -109,7 +104,6 @@ public class FileLeecher implements Runnable {
                         writePiecetoDisk(pieceHash, filename, piece.getContent());
                     }
                 } else if (messageType.equals("DISCONNECT")) {
-                    // Peer is disconnecting
                     peerSockets.remove(socket);
                     BalanceLoad();
                     Thread.currentThread().interrupt();

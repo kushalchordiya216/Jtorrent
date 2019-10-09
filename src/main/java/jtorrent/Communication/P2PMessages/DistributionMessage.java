@@ -14,10 +14,14 @@ public class DistributionMessage implements Message {
     private static final long serialVersionUID = 1L;
 
     private final String messageType = "DISTRIBUTION";
-    private String[] pieceHashes = null;
+    private Integer numPeers;
+    private Integer assignedIndex;
+    private Integer numFilesRecieved;
 
-    public DistributionMessage(String[] pieceIds) {
-        this.pieceHashes = pieceIds;
+    public DistributionMessage(Integer numPeers, Integer assignedIndex, Integer currentLatestIndex) {
+        this.assignedIndex = assignedIndex;
+        this.numPeers = numPeers;
+        this.numFilesRecieved = currentLatestIndex;
     }
 
     @Override
@@ -25,8 +29,16 @@ public class DistributionMessage implements Message {
         return messageType;
     }
 
-    public String[] getPieceHashes() {
-        return this.pieceHashes;
+    public Integer getNumFilesRecieved() {
+        return this.numFilesRecieved;
+    }
+
+    public Integer getNumPeers() {
+        return numPeers;
+    }
+
+    public Integer getAssignedIndex() {
+        return assignedIndex;
     }
 
 }

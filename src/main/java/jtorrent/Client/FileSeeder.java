@@ -3,8 +3,6 @@ package jtorrent.Client;
 import java.io.*;
 import java.net.Socket;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 
 import jtorrent.Communication.P2PMessages.*;
@@ -12,19 +10,21 @@ import jtorrent.Communication.Requests.SeedRequest;
 
 public class FileSeeder implements Runnable {
 
-    private String merkleRoot, rootDirectory;
-    private ArrayList<String> assignedPieces;
+    private String merkleRoot;
+    private File rootDirectory;
     private Socket peerEndPoint;
     private ObjectOutputStream writeToPeer = null;
     private ObjectInputStream readFromPeer = null;
     File metaDataFile = null;
     HashMap<String, String> metaDataHash = null;
+    private Integer assignedIndex = null, numPeers = null, numfileRecieved = null;
+    private String[] totalPieces = null;
 
     public FileSeeder(SeedRequest seedRequest, String rootDirectory) {
         try {
-            this.rootDirectory = Paths.get(rootDirectory, merkleRoot).toString();
             this.merkleRoot = seedRequest.getMerkleRoot();
-
+            this.rootDirectory = Paths.get(rootDirectory, this.merkleRoot).toFile();
+            this.totalPieces = this.rootDirectory.list();
             this.peerEndPoint = new Socket(seedRequest.getHostName(), seedRequest.getPort());
             this.writeToPeer = new ObjectOutputStream(this.peerEndPoint.getOutputStream());
             this.readFromPeer = new ObjectInputStream(this.peerEndPoint.getInputStream());
@@ -33,16 +33,13 @@ public class FileSeeder implements Runnable {
         }
     }
 
-    synchronized public void updateAssignedPieces(String[] newAssignedPieces) {
-        this.assignedPieces = (ArrayList<String>) Arrays.asList(newAssignedPieces);
-    }
-
     public void listener() {
         try {
             Message message = (Message) this.readFromPeer.readObject();
             if (message.getMessageType().equals("DISTRIBUTION")) {
                 DistributionMessage distributionMessage = (DistributionMessage) message;
-                updateAssignedPieces(distributionMessage.getPieceHashes());
+                this.assignedIndex = distributionMessage.getAssignedIndex();
+                this.numPeers = distributionMessage.getNumPeers();
             } else {
                 System.out.println("Completion message received from peer\nStopping transmission");
                 Thread.currentThread().join();
@@ -54,60 +51,31 @@ public class FileSeeder implements Runnable {
         }
     }
 
-    public void readMetaData() {
-        File mainFolder = new File(this.rootDirectory);
-        File[] fileList = mainFolder.listFiles();
-        for (File file : fileList) {
-            if (file.isFile() && file.getName().contains("metadata")) {
+    public void sendPieces() {
+        for (int i = this.numfileRecieved; i < this.totalPieces.length; i++) {
+            if (i % this.numPeers == this.assignedIndex) {
+                byte[] content = new byte[1024 * 1024];
+                String fileName = totalPieces[i];
+                InputStream fileReader;
                 try {
-                    ObjectInputStream metaFileReader = new ObjectInputStream(new FileInputStream(file));
-                    this.metaDataHash = (HashMap<String, String>) metaFileReader.readObject();
-                    metaFileReader.close();
-                    return;
-                } catch (IOException | ClassNotFoundException e) {
+                    fileReader = new FileInputStream(
+                            Paths.get(this.rootDirectory.toPath().toString(), fileName).toFile());
+                    fileReader.read(content);
+                    Piece piece = new Piece(fileName, content);
+                    writeToPeer.writeObject(piece);
+                    fileReader.close();
+                } catch (IOException e) {
+                    System.out.println("Connection with leecher broken, stopping transmission");
+                    try {
+                        Thread.currentThread().join();
+                    } catch (InterruptedException e1) {
+                        e1.printStackTrace();
+                    }
                     e.printStackTrace();
                 }
             }
-        }
-    }
-
-    public void sendPieces() {
-
-        byte[] content = new byte[1024 * 1024];
-        try {
-            String fileName = this.metaDataHash.get(assignedPieces.get(0));
-            InputStream fileReader = new FileInputStream(new File(this.rootDirectory + "/data/" + fileName));
-            fileReader.read(content);
-            Piece piece = new Piece(assignedPieces.get(0), content);
-            try {
-                writeToPeer.writeObject(piece);
-            } catch (IOException e) {
-                System.out.println("Connection with leecher broken, stopping transmission");
-                try {
-                    Thread.currentThread().join();
-                } catch (InterruptedException e1) {
-                    e1.printStackTrace();
-                }
-                e.printStackTrace();
-                fileReader.close();
-                return;
-            }
-            assignedPieces.remove(0);
-            fileReader.close();
-        } catch (IOException e) {
-            System.out.println("Connection with leecher broken, stopping transmission");
-            try {
-                Thread.currentThread().join();
-            } catch (InterruptedException e1) {
-                e1.printStackTrace();
-            }
-            e.printStackTrace();
-        } catch (IndexOutOfBoundsException e) {
-            System.out.println("no files left in assignedPieces\nIdle for now");
-            try {
-                Thread.sleep(10000);
-            } catch (InterruptedException e1) {
-                System.out.println("Seeder thread execution was stopped!");
+            if (i == this.totalPieces.length - 1) {
+                i = 0;
             }
         }
     }
@@ -127,8 +95,9 @@ public class FileSeeder implements Runnable {
     public void run() {
         try {
             DistributionMessage distributionMessage = (DistributionMessage) this.readFromPeer.readObject();
-            updateAssignedPieces(distributionMessage.getPieceHashes());
-            readMetaData();
+            this.assignedIndex = distributionMessage.getAssignedIndex();
+            this.assignedIndex = distributionMessage.getNumPeers();
+            this.numfileRecieved = distributionMessage.getNumFilesRecieved();
         } catch (ClassNotFoundException | IOException e) {
             e.printStackTrace();
         }

@@ -32,9 +32,9 @@ public class FileIndexManager {
 				fileWriter.writeObject(l);
 				fileWriter.close();
 			}
-			fileWriter = new ObjectOutputStream(new FileOutputStream(this.indexFile, false));
-			fileWriter.writeObject(l);
-			fileWriter.close();
+			//fileWriter = new ObjectOutputStream(new FileOutputStream(this.indexFile, false));
+			//fileWriter.writeObject(l); //?no need to write into file if it already exists
+			//fileWriter.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
