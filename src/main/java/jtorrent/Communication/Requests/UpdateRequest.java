@@ -4,14 +4,17 @@ public class UpdateRequest implements Request {
 
     private static final long serialVersionUID = 1726946734101117489L;
     private final String requestType = "UPDATE";
-    private String[] addedFiles = null, removedFiles = null;
+    private String[] addedMerkleRoots = null, removedMerkleRoots = null, addedFileNames = null, removedFileNames = null;
     private String hostname = null, username = null;
     private Integer port = null, filesizeMB = null;
 
-    public UpdateRequest(String username, String[] addedFiles, String[] removedFiles) {
+    public UpdateRequest(String username, String[] addedMerkleFiles, String[] removedMerkleRoots,
+            String[] addedFileNames, String[] removedFileNames) {
         this.username = username;
-        this.addedFiles = addedFiles;
-        this.removedFiles = removedFiles;
+        this.addedMerkleRoots = addedMerkleFiles;
+        this.removedMerkleRoots = removedMerkleRoots;
+        this.addedFileNames = addedFileNames;
+        this.removedFileNames = removedFileNames;
     }
 
     @Override
@@ -35,11 +38,19 @@ public class UpdateRequest implements Request {
     }
 
     public String[] getAddedFiles() {
-        return this.addedFiles;
+        return this.addedMerkleRoots;
     }
 
     public String[] getRemovedFiles() {
-        return this.removedFiles;
+        return this.removedMerkleRoots;
+    }
+
+    public String[] getAddedFileNames() {
+        return this.addedFileNames;
+    }
+
+    public String[] getRemovedFileNames() {
+        return this.removedFileNames;
     }
 
     public String getUsername() {

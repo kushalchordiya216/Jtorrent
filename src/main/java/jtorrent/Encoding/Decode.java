@@ -37,7 +37,7 @@ public class Decode {
     public void Merge() {
         try {
             OutputStream outputStream = new FileOutputStream(this.file);
-            for (int i = 0; i < metaDataHash.size() - 3; i++) {
+            for (int i = 0; i < metaDataHash.size() - 4; i++) {
                 byte[] content = read(this.metaDataHash.get(Integer.toString(i)));
                 for (byte c : content) {
                     if (c != 0) {

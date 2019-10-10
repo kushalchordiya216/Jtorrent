@@ -14,9 +14,10 @@ public class Encode {
     private FileInputStream reader;
     private FileOutputStream writer;
     private HashMap<String, String> MetaDataHash = new HashMap<String, String>();
-    private String tempDirectoryPath = null, rootDirectoryPath; // tempoarary directory name where encoded pieces will
+    private String tempDirectoryPath = null, rootDirectoryPath; // tempoarary directory name where encoded pieces will//
                                                                 // be stored
     private Socket trackerEndpoint;
+    private float fileSize;
 
     public Encode(String filename, String rootDirectory, Socket socket) {
         file = new File(filename);
@@ -47,6 +48,7 @@ public class Encode {
     public void Split() {
         try {
             long totalFileLength = file.length();
+            this.fileSize = (float) totalFileLength / (1024 * 1024);
             long index = 0;
             long numPieces = totalFileLength / (1024 * 1024);
             int remainder = (int) totalFileLength % (1024 * 1024);
@@ -69,6 +71,7 @@ public class Encode {
             index++;
 
             String merkleRoot = createMerkleRoot(MetaDataHash);
+
             writeMetaData(merkleRoot);
 
             this.tempDirectory.renameTo(new File(Paths.get(this.rootDirectoryPath, merkleRoot).toString()));
@@ -88,6 +91,7 @@ public class Encode {
             MetaDataHash.put("merkleRoot", merkleRoot);
             MetaDataHash.put("Tracker", getTrackerInfo());
             MetaDataHash.put("Name", file.getName());
+            MetaDataHash.put("fileSizeMB", Float.toString(this.fileSize));
             metaDataOutput.writeObject(MetaDataHash);
             metaDataOutput.close();
         } catch (IOException e) {

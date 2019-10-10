@@ -46,25 +46,39 @@ public class Peer {
         String type = null;
         Integer loginStatus = 0;
         while (loginStatus.equals(0)) {
-            System.out.println("1.Login\n2.Register");
+            System.out.println("1.Login\n2.Register\n3.Forgot Password");
             String choice = sc.nextLine();
-            this.userProfile.getCredentials();
             switch (choice) {
             case "1":
                 type = "LOGIN";
+                this.userProfile.getCredentials();
                 break;
             case "2":
                 type = "REGISTER";
+                this.userProfile.getCredentials();
+                System.out.println("Enter nickname");
+                this.userProfile.setNickName(sc.nextLine());
+                break;
+            case "3":
+                type = "FORGOT PASSWORD";
+                System.out.println("Enter username");
+                this.userProfile.setUsername(sc.nextLine());
+                System.out.println("Enter nickname");
+                this.userProfile.setNickName(sc.nextLine());
                 break;
             default:
                 type = "REGISTER";
                 break;
             }
             ConnectRequest connectRequest = new ConnectRequest(8080, type, this.userProfile.getUsername(),
-                    this.userProfile.getPassword());
+                    this.userProfile.getPassword(), this.userProfile.getNickName());
             System.out.println("Logging in ....");
             writeToTracker.writeObject(connectRequest);
             try {
+                if (connectRequest.getConnectionType() == "FORGOT PASSWORD") {
+                    String password = (String) this.readFromTracker.readObject();
+                    System.out.println(password);
+                }
                 loginStatus = (Integer) this.readFromTracker.readObject();
                 if (loginStatus.equals(0)) {
                     System.out.println(
@@ -74,13 +88,22 @@ public class Peer {
                 System.out.println("unexpected datatype returned from tracker");
             }
         }
+        this.rootDirectory = Paths.get(System.getProperty("user.home"), ".P2P", this.userProfile.getUsername())
+                .toString();
+    }
+
+    public void Logout() throws IOException {
+        ConnectRequest disconnectRequest = new ConnectRequest(8080, "DISCONNECT", this.userProfile.getUsername(),
+                this.userProfile.getPassword(), this.userProfile.getNickName());
+        writeToTracker.writeObject(disconnectRequest);
     }
 
     public void Update() throws IOException {
         FileIndexManager fileIndexManager = new FileIndexManager(this.userProfile.getUsername());
         fileIndexManager.CheckForChanges();
         UpdateRequest updateRequest = new UpdateRequest(this.userProfile.getUsername(),
-                fileIndexManager.getAddedFiles(), fileIndexManager.getRemovedFiles());
+                fileIndexManager.getAddedMerkleRoots(), fileIndexManager.getRemovedMerkleRoots(),
+                fileIndexManager.getAddedFileNames(), fileIndexManager.getRemovedFileNames());
         this.writeToTracker.writeObject(updateRequest);
     }
 
@@ -118,7 +141,6 @@ public class Peer {
         Peer peer = new Peer();
         try {
             peer.Connect(); // connect to tracker endpoint by providing username and password
-            // TODO: if connect successful, intialize rootdirectory
             // as(~/home/.P2P/{username}
             peer.updateExecutor.scheduleAtFixedRate(() -> {
                 try {
@@ -144,11 +166,14 @@ public class Peer {
                     peer.leechFile();
                     break;
                 case "2":
+                    System.out.println("Enter name of file you want to publish");
                     String fileName = sc.nextLine();
+
                     Encode encode = new Encode(fileName, peer.rootDirectory, peer.trackerEndpoint);
                     encode.Split();
                     break;
                 case "3":
+                    peer.Logout();
                     System.out.println("Going offline, all processes are being stopped");
                     System.exit(0);
                 }
@@ -160,11 +185,6 @@ public class Peer {
     }
 
     public String getRootDirectory() {
-        return rootDirectory;
-    }
-
-    public void setRootDirectory(String rootDirectory) {
-        this.rootDirectory = Paths.get(System.getProperty("user.home"), ".P2P", this.userProfile.getUsername())
-                .toString();
+        return this.rootDirectory;
     }
 }

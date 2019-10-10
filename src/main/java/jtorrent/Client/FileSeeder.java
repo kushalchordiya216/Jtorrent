@@ -56,6 +56,9 @@ public class FileSeeder implements Runnable {
             if (i % this.numPeers == this.assignedIndex) {
                 byte[] content = new byte[1024 * 1024];
                 String fileName = totalPieces[i];
+                if (fileName.contains(".metadata")) {
+                    continue;
+                }
                 InputStream fileReader;
                 try {
                     fileReader = new FileInputStream(

@@ -20,12 +20,13 @@ public class UserTable implements CRUDInterface {
     public Integer Create(Request request) {
         ConnectRequest connectRequest = (ConnectRequest) request;
         try {
-            stmt = connection
-                    .prepareStatement("INSERT INTO Users(username, password, currentIP, active) VALUES(?,?,?,?)");
+            stmt = connection.prepareStatement(
+                    "INSERT INTO Users(username, password, currentIP, active, nickname) VALUES(?,?,?,?,?)");
             stmt.setString(1, connectRequest.getUsername());
             stmt.setString(2, connectRequest.getPassword());
             stmt.setString(3, connectRequest.getHostName());
             stmt.setBoolean(4, true);
+            stmt.setString(5, connectRequest.getNickname());
             return stmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -58,6 +59,24 @@ public class UserTable implements CRUDInterface {
     @Override
     public void Delete(Request request) {
 
+    }
+
+    public String RecoverPassword(Request request) {
+        ConnectRequest connectRequest = (ConnectRequest) request;
+        try {
+            stmt = connection.prepareStatement("SELECT password FROM Users WHERE username=? AND nickname=?");
+            stmt.setString(1, connectRequest.getUsername());
+            stmt.setString(2, connectRequest.getNickname());
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getString("password");
+            } else {
+                return "unverified nickname!";
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return "error retrieving password from database";
+        }
     }
 
 }

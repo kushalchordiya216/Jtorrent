@@ -21,8 +21,8 @@ public class FilesTable implements CRUDInterface {
     public Integer Create(Request request) {
         UpdateRequest updateRequest = (UpdateRequest) request;
         try {
-            stmt = connection
-                    .prepareStatement("INSERT INTO Files(username,currentIP,merkleRoot,active) values(?,?,?,?)");
+            stmt = connection.prepareStatement(
+                    "INSERT INTO Files(username,currentIP,merkleRoot,active,filename) values(?,?,?,?,?)");
             stmt.setString(1, updateRequest.getUsername());
             stmt.setString(2, updateRequest.getHostName());
             stmt.setBoolean(4, true);
@@ -30,9 +30,12 @@ public class FilesTable implements CRUDInterface {
             System.out.println(updateRequest.getUsername() + "@" + updateRequest.getHostName()
                     + " tried to add a file entry that broke sql contraints");
         }
-        for (String merkleRoot : updateRequest.getAddedFiles()) {
+        String[] addedMerkleRoots = updateRequest.getAddedFiles();
+        String[] addedFileNames = updateRequest.getAddedFileNames();
+        for (int i = 0; i < addedMerkleRoots.length; i++) {
             try {
-                stmt.setString(3, merkleRoot);
+                stmt.setString(3, addedMerkleRoots[i]);
+                stmt.setString(5, addedFileNames[i]);
                 stmt.executeUpdate();
             } catch (SQLException e) {
                 System.out.println(updateRequest.getUsername() + "@" + updateRequest.getHostName()
@@ -82,5 +85,4 @@ public class FilesTable implements CRUDInterface {
             }
         }
     }
-
 }

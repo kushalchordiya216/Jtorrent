@@ -13,12 +13,14 @@ public class ConnectRequest implements Request {
     private String username = null;
     private String password = null;
     private Boolean active = null;
+    private String nickname = null;
 
-    public ConnectRequest(Integer port, String connectionType, String username, String password) {
+    public ConnectRequest(Integer port, String connectionType, String username, String password, String nickname) {
         this.port = port;
         this.connectionType = connectionType;
         this.username = username;
         this.password = password;
+        this.nickname = nickname;
     }
 
     @Override
@@ -58,6 +60,14 @@ public class ConnectRequest implements Request {
 
     public Boolean getActive() {
         return this.active;
+    }
+
+    public String getNickname() {
+        return nickname;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
     }
 
 }

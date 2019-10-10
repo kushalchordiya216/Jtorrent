@@ -23,6 +23,7 @@ repositories {
 dependencies {
     // This dependency is found on compile classpath of this component and consumers.
     implementation 'com.google.guava:guava:26.0-jre'
+
     // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
     // https://mvnrepository.com/artifact/mysql/mysql-connector-java
@@ -30,4 +31,4 @@ dependencies {
 }
 
 // Define the main class for the application
-mainClassName = 'jtorrent.Tracker.Tracker'
+mainClassName = 'jtorrent.App'

@@ -1,17 +1,13 @@
 package jtorrent.Client;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class FileIndexManager {
 
 	String rootDirectory = null;
-	String[] addedFiles, removedFiles;
+	String[] addedMerkleRoots, removedMerkleRoots, addedFileNames, removedFileNames;
 	File indexFile;
 	File folder;
 	ObjectOutputStream fileWriter;
@@ -32,9 +28,6 @@ public class FileIndexManager {
 				fileWriter.writeObject(l);
 				fileWriter.close();
 			}
-			//fileWriter = new ObjectOutputStream(new FileOutputStream(this.indexFile, false));
-			//fileWriter.writeObject(l); //?no need to write into file if it already exists
-			//fileWriter.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -54,26 +47,63 @@ public class FileIndexManager {
 			List<String> removeList = new ArrayList<String>(prevList);
 			removeList.removeAll(newList);
 
-			this.addedFiles = new String[addList.size()];
-			this.removedFiles = new String[removeList.size()];
-			this.addedFiles = addList.toArray(this.addedFiles);
-			this.removedFiles = removeList.toArray(this.removedFiles);
+			this.addedMerkleRoots = new String[addList.size()];
+			this.removedMerkleRoots = new String[removeList.size()];
+			this.addedMerkleRoots = addList.toArray(this.addedMerkleRoots);
+			this.removedMerkleRoots = removeList.toArray(this.removedMerkleRoots);
 
 			ObjectOutputStream fileWriter = new ObjectOutputStream(new FileOutputStream(this.indexFile, false));
 			fileWriter.writeObject(newList);
 
 			fileReader.close();
 			fileWriter.close();
+			getFileNames();
 		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}
 	}
 
-	public String[] getAddedFiles() {
-		return this.addedFiles;
+	public void getFileNames() {
+		ArrayList<String> addedList = new ArrayList<String>();
+		ArrayList<String> removedList = new ArrayList<String>();
+		for (String merkleRoot : this.addedMerkleRoots) {
+			File directory = Paths.get(this.rootDirectory, merkleRoot).toFile();
+			String[] filelist = directory.list();
+			for (String file : filelist) {
+				if (file.contains(".metadata")) {
+					addedList.add(file.substring(0, file.length() - 9));
+				}
+			}
+		}
+		for (String merkleRoot : this.removedMerkleRoots) {
+			File directory = Paths.get(this.rootDirectory, merkleRoot).toFile();
+			String[] filelist = directory.list();
+			for (String file : filelist) {
+				if (file.contains(".metadata")) {
+					removedList.add(file.substring(0, file.length() - 9));
+				}
+			}
+		}
+		this.addedFileNames = new String[addedList.size()];
+		this.removedFileNames = new String[removedList.size()];
+		this.addedFileNames = addedList.toArray(this.addedFileNames);
+		this.removedFileNames = removedList.toArray(this.removedFileNames);
+
 	}
 
-	public String[] getRemovedFiles() {
-		return this.removedFiles;
+	public String[] getAddedMerkleRoots() {
+		return this.addedMerkleRoots;
+	}
+
+	public String[] getRemovedMerkleRoots() {
+		return this.removedMerkleRoots;
+	}
+
+	public String[] getAddedFileNames() {
+		return this.addedFileNames;
+	}
+
+	public String[] getRemovedFileNames() {
+		return this.removedFileNames;
 	}
 }

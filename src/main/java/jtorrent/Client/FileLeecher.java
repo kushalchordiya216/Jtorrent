@@ -37,6 +37,7 @@ public class FileLeecher implements Runnable {
         this.metadataHash.remove("merkleRoot");
         this.metadataHash.remove("Name");
         this.metadataHash.remove("Tracker");
+        this.metadataHash.remove("fileSizeMB");
         this.pendingPieces = (ArrayList<String>) metadataHash.values();
         this.metaFileDecoder = metaFileDecoder;
         this.numPiecesRecieved = 0;
@@ -72,15 +73,14 @@ public class FileLeecher implements Runnable {
         }
     }
 
-    synchronized public void writePiecetoDisk(String pieceId, String name, byte[] content) {
-        // TODO: test if it works when this is method is not synchronized
-        File newPiece = Paths.get(this.rootDirectory, name).toFile();
+    public void writePiecetoDisk(String pieceHash, byte[] content) {
+        File newPiece = Paths.get(this.rootDirectory, pieceHash).toFile();
         if (!newPiece.exists()) {
             try {
                 newPiece.createNewFile();
                 OutputStream writeToFile = new FileOutputStream(newPiece);
                 writeToFile.write(content);
-                updatePendingPieces(pieceId);
+                updatePendingPieces(pieceHash);
                 this.numPiecesRecieved++;
                 writeToFile.close();
             } catch (IOException e) {
@@ -90,9 +90,9 @@ public class FileLeecher implements Runnable {
     }
 
     public void Listener(Socket socket) {
-        while (!socket.isClosed() && !pendingPieces.isEmpty()) {
-            try {
-                ObjectInputStream receiveFromPeer = new ObjectInputStream(socket.getInputStream());
+        try {
+            ObjectInputStream receiveFromPeer = new ObjectInputStream(socket.getInputStream());
+            while (!socket.isClosed() && !pendingPieces.isEmpty()) {
                 Message message = (Message) receiveFromPeer.readObject();
                 String messageType = message.getMessageType();
                 if (messageType.equals("PIECE")) {
@@ -100,17 +100,35 @@ public class FileLeecher implements Runnable {
                     Piece piece = (Piece) message;
                     String pieceHash = piece.getPieceHash();
                     if (pendingPieces.contains(pieceHash)) {
-                        String filename = this.metadataHash.get(pieceHash);
-                        writePiecetoDisk(pieceHash, filename, piece.getContent());
+                        writePiecetoDisk(pieceHash, piece.getContent());
                     }
                 } else if (messageType.equals("DISCONNECT")) {
                     peerSockets.remove(socket);
                     BalanceLoad();
                     Thread.currentThread().interrupt();
                 }
-            } catch (IOException | ClassNotFoundException e) {
-                System.out.println("One peer has disconnected!\n");
-                peerSockets.remove(socket);
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("One peer has disconnected!\n");
+            peerSockets.remove(socket);
+            e.printStackTrace();
+        }
+        try {
+            Thread.currentThread().join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public void disconnect() {
+        for (Socket socket : peerSockets) {
+            DisconnectMessage disconnectMessage = new DisconnectMessage();
+            try {
+                ObjectOutputStream writeToSeeder = new ObjectOutputStream(socket.getOutputStream());
+                writeToSeeder.writeObject(disconnectMessage);
+                writeToSeeder.close();
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
@@ -132,11 +150,13 @@ public class FileLeecher implements Runnable {
                 e.printStackTrace();
             }
         }
+        disconnect();
     }
 
     @Override
     public void run() {
         leech();
+        System.out.println("All piece received\nReconstructing file ....");
         this.metaFileDecoder.Merge();
     }
 }

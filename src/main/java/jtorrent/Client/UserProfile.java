@@ -8,6 +8,7 @@ import java.util.Scanner;
 public class UserProfile {
     private String username = new String("");
     private String password = new String("");
+    private String nickName = new String("");
     Scanner sc = new Scanner(System.in);
 
     public String getUsername() {
@@ -24,6 +25,14 @@ public class UserProfile {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public void setNickName(String nickName) {
+        this.nickName = nickName;
+    }
+
+    public String getNickName() {
+        return this.nickName;
     }
 
     Boolean isLoggedIn = false;

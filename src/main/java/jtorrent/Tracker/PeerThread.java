@@ -84,8 +84,15 @@ public class PeerThread implements Runnable {
             result = userTable.Update(connectRequest);
             this.writeToPeer.writeObject(result);
             break;
+        case "FORGOT PASSWORD":
+            connectRequest.setActive(true);
+            String password = userTable.RecoverPassword(connectRequest);
+            this.writeToPeer.writeObject(password);
+            this.writeToPeer.writeObject((Integer) 0);
+            break;
         case "DISCONNECT":
             connectRequest.setActive(false);
+            connectRequest.setHostName(null);
             result = userTable.Update(connectRequest);
             this.removePeer();
             break;
@@ -103,7 +110,11 @@ public class PeerThread implements Runnable {
         } catch (IOException e) {
             System.out.println("Socket Connection with peer" + this.getUsername() + "closed");
         }
-        Thread.currentThread().interrupt();
+        try {
+            Thread.currentThread().join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     public void processRequest(Request request) throws IOException {
