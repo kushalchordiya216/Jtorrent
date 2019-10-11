@@ -140,6 +140,7 @@ public class FileLeecher implements Runnable {
             try {
                 if (this.peerSockets.size() <= 10) {
                     socket = this.serverSocket.accept();
+                    System.out.println(socket.getInetAddress().toString() + "\n" + socket.getLocalPort());
                     peerSockets.add(socket);
                     this.BalanceLoad();
                     new Thread(() -> {

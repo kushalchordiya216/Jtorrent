@@ -14,7 +14,7 @@ public class Peer {
     private Socket trackerEndpoint = null;
     private ObjectOutputStream writeToTracker = null;
     private ObjectInputStream readFromTracker = null;
-    private String trackerIP = new String("192.168.43.234");
+    private String trackerIP = new String("localhost");
     private UserProfile userProfile = new UserProfile();
     public String rootDirectory = null;
     HashMap<Integer, String[]> changedFiles = new HashMap<Integer, String[]>();
@@ -137,21 +137,15 @@ public class Peer {
                 Thread t1 = new Thread(fileSeeder);
                 t1.start();
             } catch (ClassNotFoundException | IOException e) {
-                e.printStackTrace();
+                System.out.println("Client has been stopped.\nTerminating all seeds");
+                try {
+                    Thread.currentThread().join();
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                }
             }
         }
     }
-
-    // while (true) {
-    // try {
-    // SeedRequest seedRequest = (SeedRequest) this.readFromTracker.readObject();
-    // FileSeeder fileSeeder = new FileSeeder(seedRequest, this.rootDirectory);
-    // seedRequest.getMerkleRoot();
-    // seedExecutor.submit(fileSeeder);
-    // } catch (ClassNotFoundException | IOException e) {
-    // e.printStackTrace();
-    // }
-    // }
 
     public static void main(String[] args) {
         Peer peer = new Peer();
@@ -185,17 +179,17 @@ public class Peer {
                 case "2":
                     System.out.println("Enter name of file you want to publish");
                     String fileName = sc.nextLine();
-
                     Encode encode = new Encode(fileName, peer.rootDirectory, peer.trackerEndpoint);
                     encode.Split();
                     break;
                 case "3":
                     peer.Logout();
                     System.out.println("Going offline, all processes are being stopped");
+                    Thread.sleep(5000);
                     System.exit(0);
                 }
             }
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             System.out.println("Error establishing connection with tracker");
         }
         sc.close();

@@ -104,7 +104,6 @@ public class PeerThread implements Runnable {
             this.writeToPeer.writeObject((Integer) 0);
             break;
         case "DISCONNECT":
-            System.out.println("Disconnect request from");
             connectRequest.setActive(false);
             connectRequest.setHostName(null);
             result = userTable.Update(connectRequest);
