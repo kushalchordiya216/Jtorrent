@@ -24,7 +24,7 @@ public class LeechRequest implements Request {
     }
 
     public void setHostName(String hostName) {
-        this.hostName = hostName;
+        this.hostName = hostName.substring(1);
     }
 
     @Override

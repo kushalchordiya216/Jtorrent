@@ -34,14 +34,14 @@ public class UpdateRequest implements Request {
 
     @Override
     public void setHostName(String hostName) {
-        this.hostname = hostName;
+        this.hostname = hostName.substring(1);
     }
 
-    public String[] getAddedFiles() {
+    public String[] getAddedMerkleRoots() {
         return this.addedMerkleRoots;
     }
 
-    public String[] getRemovedFiles() {
+    public String[] getRemovedMerkleRoots() {
         return this.removedMerkleRoots;
     }
 

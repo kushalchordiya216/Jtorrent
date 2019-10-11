@@ -47,7 +47,7 @@ public class ConnectRequest implements Request {
     }
 
     public void setHostName(String hostName) {
-        this.hostName = hostName;
+        this.hostName = hostName.substring(1);
     }
 
     public String getPassword() {

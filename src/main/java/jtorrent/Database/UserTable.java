@@ -24,6 +24,7 @@ public class UserTable implements CRUDInterface {
                     "INSERT INTO Users(username, password, currentIP, active, nickname) VALUES(?,?,?,?,?)");
             stmt.setString(1, connectRequest.getUsername());
             stmt.setString(2, connectRequest.getPassword());
+
             stmt.setString(3, connectRequest.getHostName());
             stmt.setBoolean(4, true);
             stmt.setString(5, connectRequest.getNickname());

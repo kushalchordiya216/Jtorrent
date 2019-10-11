@@ -14,13 +14,13 @@ public class Peer {
     private Socket trackerEndpoint = null;
     private ObjectOutputStream writeToTracker = null;
     private ObjectInputStream readFromTracker = null;
-    private String trackerIP = new String("localhost");
+    private String trackerIP = new String("192.168.43.234");
     private UserProfile userProfile = new UserProfile();
     public String rootDirectory = null;
     HashMap<Integer, String[]> changedFiles = new HashMap<Integer, String[]>();
 
     private ThreadPoolExecutor leechExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(3);
-    private ThreadPoolExecutor seedExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(3);
+    private ThreadPoolExecutor seedExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
     private ScheduledExecutorService updateExecutor = (ScheduledExecutorService) Executors.newScheduledThreadPool(1);
 
     public Peer() {
@@ -117,6 +117,7 @@ public class Peer {
             FileLeecher fileLeecher = new FileLeecher(merkleRoot, decode.getMetaDataHash(), rootDirectory, decode); // start
             LeechRequest leechRequest = new LeechRequest(fileLeecher.getPortNo(), merkleRoot); // ask for files on
             this.writeToTracker.writeObject(leechRequest);
+            leechRequest.getMerkleRoot();
             this.leechExecutor.submit((fileLeecher));
 
             Integer numSeeders = (Integer) this.readFromTracker.readObject();
@@ -127,18 +128,34 @@ public class Peer {
     }
 
     public void SeedFile() {
-        try {
-            SeedRequest seedRequest = (SeedRequest) this.readFromTracker.readObject();
-            FileSeeder fileSeeder = new FileSeeder(seedRequest, this.rootDirectory);
-            seedExecutor.submit(fileSeeder);
-        } catch (ClassNotFoundException | IOException e) {
-            e.printStackTrace();
+        System.out.println("Seeder started");
+        while (true) {
+            try {
+                SeedRequest seedRequest = (SeedRequest) this.readFromTracker.readObject();
+                FileSeeder fileSeeder = new FileSeeder(seedRequest, this.rootDirectory);
+                seedRequest.getMerkleRoot();
+                Thread t1 = new Thread(fileSeeder);
+                t1.start();
+            } catch (ClassNotFoundException | IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
+    // while (true) {
+    // try {
+    // SeedRequest seedRequest = (SeedRequest) this.readFromTracker.readObject();
+    // FileSeeder fileSeeder = new FileSeeder(seedRequest, this.rootDirectory);
+    // seedRequest.getMerkleRoot();
+    // seedExecutor.submit(fileSeeder);
+    // } catch (ClassNotFoundException | IOException e) {
+    // e.printStackTrace();
+    // }
+    // }
+
     public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
         Peer peer = new Peer();
+        Scanner sc = new Scanner(System.in);
         try {
             peer.Connect(); // connect to tracker endpoint by providing username and password
             // as(~/home/.P2P/{username}
@@ -150,9 +167,9 @@ public class Peer {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            }, 0, 5, TimeUnit.MINUTES);
+            }, 0, 5, TimeUnit.SECONDS);
 
-            new Thread(() -> {
+            peer.seedExecutor.submit(() -> {
                 peer.SeedFile();
             });
 

@@ -38,7 +38,7 @@ public class FileLeecher implements Runnable {
         this.metadataHash.remove("Name");
         this.metadataHash.remove("Tracker");
         this.metadataHash.remove("fileSizeMB");
-        this.pendingPieces = (ArrayList<String>) metadataHash.values();
+        this.pendingPieces = new ArrayList<String>(metadataHash.values());
         this.metaFileDecoder = metaFileDecoder;
         this.numPiecesRecieved = 0;
         try {

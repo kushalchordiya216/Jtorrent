@@ -10,6 +10,7 @@ import java.util.Map.Entry;
 import com.google.common.hash.Hashing;
 
 public class Encode {
+    private String filename;
     private File file, metadata, newFile, tempDirectory;
     private FileInputStream reader;
     private FileOutputStream writer;
@@ -21,15 +22,17 @@ public class Encode {
 
     public Encode(String filename, String rootDirectory, Socket socket) {
         file = new File(filename);
+        String tempArr[] = filename.split("/");
+        filename = tempArr[tempArr.length - 1];
+        this.filename = tempArr[tempArr.length - 1];
         this.trackerEndpoint = socket;
-        this.newFile = new File("newFile.txt");
         this.rootDirectoryPath = rootDirectory;
-        this.tempDirectoryPath = Paths.get(rootDirectory, filename).toString();
+        this.tempDirectoryPath = Paths.get(rootDirectory, this.filename).toString();
         this.tempDirectory = new File(this.tempDirectoryPath);
         if (!this.tempDirectory.exists()) {
             this.tempDirectory.mkdirs();
         }
-        metadata = new File(Paths.get(this.tempDirectoryPath, filename + ".metadata").toString()); // metadatafile
+        metadata = new File(Paths.get(this.tempDirectoryPath, this.filename + ".metadata").toString()); // metadatafile
         if (!metadata.exists()) {
             try {
                 metadata.createNewFile();
@@ -39,7 +42,6 @@ public class Encode {
         } // created
         try {
             reader = new FileInputStream(file);
-            writer = new FileOutputStream(newFile);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
@@ -53,9 +55,8 @@ public class Encode {
             long numPieces = totalFileLength / (1024 * 1024);
             int remainder = (int) totalFileLength % (1024 * 1024);
             do {
-                byte[] piece = new byte[10];
+                byte[] piece = new byte[1024];
                 reader.read(piece);
-                writer.write(piece);
                 String hash = Hashing.sha256().hashBytes(piece).toString();
                 this.writePiece(hash, piece);
                 MetaDataHash.put(Long.toString(index), hash);
@@ -127,7 +128,7 @@ public class Encode {
         Socket socket;
         try {
             socket = new Socket("localhost", 8080);
-            Encode encode = new Encode("flow.txt", "/home/kushal/.P2P/myuser", socket);
+            Encode encode = new Encode("/home/kushal/brave-browser.svg", "/home/kushal/.P2P/myuser", socket);
             encode.Split();
         } catch (IOException e) {
             e.printStackTrace();

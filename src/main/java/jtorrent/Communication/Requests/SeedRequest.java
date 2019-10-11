@@ -38,7 +38,7 @@ public class SeedRequest implements Request {
 
     @Override
     public void setHostName(String hostName) {
-        this.hostname = hostName;
+        this.hostname = hostName.substring(1);
     }
 
 }

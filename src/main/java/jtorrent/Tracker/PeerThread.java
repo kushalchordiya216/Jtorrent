@@ -25,8 +25,8 @@ public class PeerThread implements Runnable {
         try {
             this.socket = socket;
             this.tracker = tracker;
-            this.readFromPeer = new ObjectInputStream(socket.getInputStream());
-            this.writeToPeer = new ObjectOutputStream(socket.getOutputStream());
+            this.readFromPeer = new ObjectInputStream(this.socket.getInputStream());
+            this.writeToPeer = new ObjectOutputStream(this.socket.getOutputStream());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -34,7 +34,9 @@ public class PeerThread implements Runnable {
 
     public void sendRequest(SeedRequest seedRequest) {
         try {
+            System.out.println(seedRequest.getMerkleRoot());
             this.writeToPeer.writeObject(seedRequest);
+            System.out.println("sent seed request to " + this.socket.getInetAddress().toString());
         } catch (IOException e) {
             System.out.println("could not send request to peer!");
             e.printStackTrace();
@@ -43,6 +45,8 @@ public class PeerThread implements Runnable {
 
     public void processUpdateRequest(UpdateRequest updateRequest) {
         updateRequest.setHostName(this.socket.getInetAddress().toString());
+        System.out.println(updateRequest.getAddedFileNames()[0]);
+        System.out.println(updateRequest.getAddedMerkleRoots()[0]);
         filesTable.Create(updateRequest);
         filesTable.Delete(updateRequest);
     }
@@ -60,6 +64,7 @@ public class PeerThread implements Runnable {
         try {
             while (rs.next()) {
                 peerIps.add(rs.getString("currentIP"));
+                System.out.println(rs.getString("currentIP") + "is potential seeder");
             }
             this.writeToPeer.writeObject(peerIps.size());
         } catch (SQLException | IOException e) {
@@ -78,11 +83,19 @@ public class PeerThread implements Runnable {
             connectRequest.setActive(true);
             result = userTable.Create(connectRequest);
             this.writeToPeer.writeObject(result);
+            if (result != 0) {
+                this.tracker.addToPeerIndex(connectRequest.getHostName(), this);
+                System.out.println(connectRequest.getHostName() + "added to peerIndex");
+            }
             break;
         case "LOGIN":
             connectRequest.setActive(true);
             result = userTable.Update(connectRequest);
             this.writeToPeer.writeObject(result);
+            if (result != 0) {
+                this.tracker.addToPeerIndex(connectRequest.getHostName(), this);
+                System.out.println(connectRequest.getHostName() + "added to peerIndex");
+            }
             break;
         case "FORGOT PASSWORD":
             connectRequest.setActive(true);
@@ -91,6 +104,7 @@ public class PeerThread implements Runnable {
             this.writeToPeer.writeObject((Integer) 0);
             break;
         case "DISCONNECT":
+            System.out.println("Disconnect request from");
             connectRequest.setActive(false);
             connectRequest.setHostName(null);
             result = userTable.Update(connectRequest);
@@ -140,6 +154,7 @@ public class PeerThread implements Runnable {
         while (this.socket.isConnected()) {
             try {
                 Request request = (Request) readFromPeer.readObject();
+                System.out.println(request.getRequestType());
                 executor.submit(() -> {
                     try {
                         processRequest(request);

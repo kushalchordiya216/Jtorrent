@@ -30,12 +30,14 @@ public class FilesTable implements CRUDInterface {
             System.out.println(updateRequest.getUsername() + "@" + updateRequest.getHostName()
                     + " tried to add a file entry that broke sql contraints");
         }
-        String[] addedMerkleRoots = updateRequest.getAddedFiles();
+        String[] addedMerkleRoots = updateRequest.getAddedMerkleRoots();
         String[] addedFileNames = updateRequest.getAddedFileNames();
         for (int i = 0; i < addedMerkleRoots.length; i++) {
             try {
                 stmt.setString(3, addedMerkleRoots[i]);
                 stmt.setString(5, addedFileNames[i]);
+                System.out.println("Inside db package");
+                System.out.println(stmt);
                 stmt.executeUpdate();
             } catch (SQLException e) {
                 System.out.println(updateRequest.getUsername() + "@" + updateRequest.getHostName()
@@ -75,9 +77,11 @@ public class FilesTable implements CRUDInterface {
             System.out.println(updateRequest.getUsername() + "@" + updateRequest.getHostName()
                     + " tried to add a file entry that broke sql contraints");
         }
-        for (String merkleRoot : updateRequest.getRemovedFiles()) {
+        for (String merkleRoot : updateRequest.getRemovedMerkleRoots()) {
             try {
                 stmt.setString(2, merkleRoot);
+                System.out.println("Inside db package");
+                System.out.println(stmt);
                 stmt.executeUpdate();
             } catch (SQLException e) {
                 System.out.println(updateRequest.getUsername() + "@" + updateRequest.getHostName()

@@ -46,7 +46,11 @@ public class FileSeeder implements Runnable {
             }
         } catch (ClassNotFoundException | IOException | InterruptedException e) {
             System.out.println("Connection with peer interrupted\nStopping transmission!");
-            Thread.currentThread().interrupt();
+            try {
+                Thread.currentThread().join();
+            } catch (InterruptedException e1) {
+                e1.printStackTrace();
+            }
             e.printStackTrace();
         }
     }

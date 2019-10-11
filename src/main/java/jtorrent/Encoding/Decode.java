@@ -16,6 +16,7 @@ public class Decode {
             this.metaFileName = metaFileName;
             this.metaFile = new File(this.metaFileName);
             this.currentDirectory = metaFile.getParent();
+            System.out.println(this.currentDirectory);
             ObjectInputStream readMetaFile = new ObjectInputStream(new FileInputStream(this.metaFile));
             try {
                 this.metaDataHash = (HashMap<String, String>) readMetaFile.readObject();
@@ -25,8 +26,10 @@ public class Decode {
             }
             this.merkleRoot = this.metaDataHash.get("merkleRoot");
             this.fileName = this.metaDataHash.get("Name");
+            System.out.println(this.fileName);
             this.file = Paths.get(this.currentDirectory, this.fileName).toFile();
-            this.rootDirectory = rootDirectory;
+            System.out.println(this.file.getName());
+            this.rootDirectory = Paths.get(rootDirectory, this.merkleRoot).toString();
             readMetaFile.close();
         } catch (IOException e) {
             System.out.println("Error reading metadata file");
@@ -90,5 +93,12 @@ public class Decode {
 
     public HashMap<String, String> getMetaDataHash() {
         return this.metaDataHash;
+    }
+
+    public static void main(String[] args) {
+        Decode decode = new Decode(
+                "/home/kushal/.P2P/myuser/03afa7aae4b80a056f9a41bfdec79be2679c5e469aa8224fb8884f823da3ebef/brave-browser.svg.metadata",
+                "/home/kushal/.P2P/myuser");
+        decode.Merge();
     }
 }
