@@ -25,6 +25,7 @@ public class FileSeeder implements Runnable {
             this.merkleRoot = seedRequest.getMerkleRoot();
             this.rootDirectory = Paths.get(rootDirectory, this.merkleRoot).toFile();
             this.totalPieces = this.rootDirectory.list();
+            System.out.println(seedRequest.getHostName() + " " + seedRequest.getPort());
             this.peerEndPoint = new Socket(seedRequest.getHostName(), seedRequest.getPort());
             System.out.println("Leecher at " + seedRequest.getHostName() + seedRequest.getPort());
             this.writeToPeer = new ObjectOutputStream(this.peerEndPoint.getOutputStream());

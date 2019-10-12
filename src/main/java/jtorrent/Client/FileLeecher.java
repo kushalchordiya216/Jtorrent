@@ -168,7 +168,6 @@ public class FileLeecher implements Runnable {
                 this.BalanceLoad();
                 System.out.println("After load balance");
                 new Thread(new Runnable() {
-
                     @Override
                     public void run() {
                         Listener(socket);

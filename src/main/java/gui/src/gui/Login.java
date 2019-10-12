@@ -63,7 +63,7 @@ public class Login {
 		LoginFrame.setIconImage(Toolkit.getDefaultToolkit()
 				.getImage(Login.class.getResource("/gui/src/imgs/Profile_GroupFriend-RoundedBlack-512.png")));
 		LoginFrame.setResizable(false);
-		LoginFrame.setSize(800, 600);
+		LoginFrame.setSize(1920, 1080);
 		LoginFrame.setLocationRelativeTo(null);
 		LoginFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		LoginFrame.getContentPane().setLayout(null);
@@ -173,7 +173,7 @@ public class Login {
 
 		JLabel lblbg = new JLabel("");
 		lblbg.setIcon(new ImageIcon(Login.class.getResource("/gui/src/imgs/qw11.jpg")));
-		lblbg.setBounds(41, 0, 797, 637);
+		lblbg.setBounds(41, 0, 1920, 1080);
 		LoginFrame.getContentPane().add(lblbg);
 
 		userNametextField.addKeyListener(new KeyAdapter() {

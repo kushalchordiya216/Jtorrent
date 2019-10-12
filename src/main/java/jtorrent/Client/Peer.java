@@ -15,13 +15,15 @@ public class Peer {
     private Socket trackerEndpoint = null;
     private ObjectOutputStream writeToTracker = null;
     private ObjectInputStream readFromTracker = null;
-    private String trackerIP = new String("2409:4042:2595:4b85:5b7e:d25c:51bd:c766");
+    // 2409:4042:229d:47ad:3d26:b9c8:3b79:335b
+    // 2409:4042:2595:4b85:5b7e:d25c:51bd:c766
+    private String trackerIP = new String("2409:4042:229d:47ad:3d26:b9c8:3b79:335b");
     private UserProfile userProfile = new UserProfile();
     public String rootDirectory = null;
     HashMap<Integer, String[]> changedFiles = new HashMap<Integer, String[]>();
 
     private ThreadPoolExecutor leechExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(3);
-    private ThreadPoolExecutor seedExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
+    private ThreadPoolExecutor seedExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(3);
     private ScheduledExecutorService updateExecutor = (ScheduledExecutorService) Executors.newScheduledThreadPool(1);
 
     public Peer() {
