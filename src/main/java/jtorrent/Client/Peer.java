@@ -20,7 +20,7 @@ public class Peer {
     HashMap<Integer, String[]> changedFiles = new HashMap<Integer, String[]>();
 
     private ThreadPoolExecutor leechExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(3);
-    private ThreadPoolExecutor seedExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
+    private ThreadPoolExecutor seedExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(3);
     private ScheduledExecutorService updateExecutor = (ScheduledExecutorService) Executors.newScheduledThreadPool(1);
 
     public Peer() {
@@ -136,8 +136,7 @@ public class Peer {
                 SeedRequest seedRequest = (SeedRequest) this.readFromTracker.readObject();
                 FileSeeder fileSeeder = new FileSeeder(seedRequest, this.rootDirectory);
                 System.out.println(seedRequest.getMerkleRoot());
-                Thread t1 = new Thread(fileSeeder);
-                t1.start();
+                this.seedExecutor.submit(fileSeeder);
             } catch (ClassNotFoundException | IOException e) {
                 System.out.println("Client has been stopped.\nTerminating all seeds");
                 try {
@@ -163,12 +162,16 @@ public class Peer {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            }, 0, 30, TimeUnit.SECONDS);
+            }, 0, 10, TimeUnit.SECONDS);
 
-            peer.seedExecutor.submit(() -> {
-                peer.SeedFile();
-            });
-
+            new Thread (new Runnable(){
+            
+                @Override
+                public void run() {
+                    // TODO Auto-generated method stub
+                    peer.SeedFile();
+                }
+            }).start();
             while (true) {
                 System.out.println("1.Request File\n2.Publish\n3.Exit");
                 System.out.println(
@@ -187,11 +190,11 @@ public class Peer {
                 case "3":
                     peer.Logout();
                     System.out.println("Going offline, all processes are being stopped");
-                    Thread.sleep(5000);
+                   // Thread.sleep(5000);
                     System.exit(0);
                 }
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             System.out.println("Error establishing connection with tracker");
         }
         sc.close();

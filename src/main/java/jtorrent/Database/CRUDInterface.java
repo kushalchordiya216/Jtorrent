@@ -4,8 +4,8 @@ import jtorrent.Communication.Requests.Request;
 import java.sql.*;
 
 public interface CRUDInterface {
-    String password = "rootpasswd123";
-    String username = "root";
+    String password = "Prem@116";
+    String username = "prem";
     String URL = "jdbc:mysql://localhost:3306/P2P";
 
     public Integer Create(Request request);
