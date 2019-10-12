@@ -58,7 +58,7 @@ public class DashBoard {
 	private void initialize() {
 		DashBoardFrame = new JFrame();
 		DashBoardFrame.setIconImage(Toolkit.getDefaultToolkit()
-				.getImage(DashBoard.class.getResource("/imgs/Profile_GroupFriend-RoundedBlack-512.png")));
+				.getImage(DashBoard.class.getResource("/gui/src/imgs/Profile_GroupFriend-RoundedBlack-512.png")));
 		// DashBoardFrame.setIconImage(Toolkit.getDefaultToolkit().getImage("C:\\Users\\91860\\Desktop\\Project\\gui\\src\\imgs\\Profile_GroupFriend-RoundedBlack-512.png"));
 		DashBoardFrame.setSize(1227, 714);
 		DashBoardFrame.setLocationRelativeTo(null);
@@ -72,8 +72,8 @@ public class DashBoard {
 		UpperPanel.setLayout(null);
 
 		JLabel lblIcon = new JLabel("");
-		lblIcon.setIcon(
-				new ImageIcon(DashBoard.class.getResource("/imgs/images-removebg-preview-removebg-preview.png")));
+		lblIcon.setIcon(new ImageIcon(
+				DashBoard.class.getResource("/gui/src/imgs/images-removebg-preview-removebg-preview.png")));
 		lblIcon.setBackground(Color.WHITE);
 		lblIcon.setBounds(422, 10, 304, 170);
 		UpperPanel.add(lblIcon);
@@ -106,7 +106,7 @@ public class DashBoard {
 		UpperPanel.add(lblUsername);
 
 		JLabel lblLogout = new JLabel("LOGOUT??");
-		lblLogout.setIcon(new ImageIcon(DashBoard.class.getResource("/imgs/20712467.jpg")));
+		lblLogout.setIcon(new ImageIcon(DashBoard.class.getResource("/gui/src/imgs/20712467.jpg")));
 		lblLogout.setForeground(Color.BLACK);
 		lblLogout.setFont(new Font("Times New Roman", Font.BOLD | Font.ITALIC, 20));
 		lblLogout.setBackground(Color.WHITE);

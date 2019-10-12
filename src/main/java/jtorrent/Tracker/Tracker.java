@@ -59,4 +59,14 @@ public class Tracker {
             }
         }
     }
+
+    public void runTracker() {
+        while (true) {
+            try {
+                this.acceptIncomingConnection();
+            } catch (IOException | ClassNotFoundException | SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }

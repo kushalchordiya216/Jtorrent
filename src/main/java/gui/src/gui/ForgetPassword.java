@@ -55,7 +55,7 @@ public class ForgetPassword {
 	private void initialize() {
 		ForgetPasswordFrame = new JFrame();
 		ForgetPasswordFrame.setIconImage(Toolkit.getDefaultToolkit()
-				.getImage(ForgetPassword.class.getResource("/imgs/Profile_GroupFriend-RoundedBlack-512.png")));
+				.getImage(ForgetPassword.class.getResource("/gui/src/imgs/Profile_GroupFriend-RoundedBlack-512.png")));
 		ForgetPasswordFrame.setSize(800, 600);
 		ForgetPasswordFrame.setLocationRelativeTo(null);
 		ForgetPasswordFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -122,7 +122,7 @@ public class ForgetPassword {
 		ForgetPasswordFrame.getContentPane().add(lblForgotPasswordDont);
 
 		JLabel backgroundLabel = new JLabel("");
-		backgroundLabel.setIcon(new ImageIcon(ForgetPassword.class.getResource("/imgs/regbg.jpg")));
+		backgroundLabel.setIcon(new ImageIcon(ForgetPassword.class.getResource("/gui/src/imgs/regbg.jpg")));
 		backgroundLabel.setBounds(0, -30, 800, 600);
 		ForgetPasswordFrame.getContentPane().add(backgroundLabel);
 

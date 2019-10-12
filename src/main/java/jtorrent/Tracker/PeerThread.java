@@ -105,7 +105,7 @@ public class PeerThread implements Runnable {
             break;
         case "DISCONNECT":
             connectRequest.setActive(false);
-            connectRequest.setHostName(null);
+            connectRequest.setHostName(connectRequest.getUsername());
             result = userTable.Update(connectRequest);
             this.removePeer();
             break;
@@ -163,6 +163,10 @@ public class PeerThread implements Runnable {
                 });
             } catch (ClassNotFoundException | IOException e) {
                 System.out.println(this.username + " has disconnected!");
+                // connectRequest.setActive(false);
+                // connectRequest.setHostName(connectRequest.getUsername());
+                // result = userTable.Update(connectRequest);
+
                 try {
                     Thread.currentThread().join();
                 } catch (InterruptedException e1) {
@@ -172,6 +176,7 @@ public class PeerThread implements Runnable {
         }
     }
 
+    // TODO: ADD REMOVE FROM PEER INDEX FUNCTION
     /*
      * getter and setters may not be needed, but they're kept for now anyway just in
      * case

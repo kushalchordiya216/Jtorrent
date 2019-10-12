@@ -42,36 +42,17 @@ public class Decode {
             OutputStream outputStream = new FileOutputStream(this.file);
             for (int i = 0; i < metaDataHash.size() - 4; i++) {
                 byte[] content = read(this.metaDataHash.get(Integer.toString(i)));
-                for (byte c : content) {
-                    if (c != 0) {
-                        outputStream.write(c);
-                    }
-                }
+                outputStream.write(content);
             }
             outputStream.close();
-            CreateMetaFileCopy();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void CreateMetaFileCopy() {
-        File metaFileCopy = Paths.get(this.rootDirectory, this.metaFileName).toFile();
-        if (!metaFileCopy.exists()) {
-            try {
-                metaFileCopy.createNewFile();
-                ObjectOutputStream metaFileWriter = new ObjectOutputStream(new FileOutputStream(metaFileCopy));
-                metaFileWriter.writeObject(this.metaDataHash);
-                metaFileWriter.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
     private byte[] read(String fileName) {
-        byte[] pieceContent = new byte[1024 * 1024];
         File piece = Paths.get(this.rootDirectory, fileName).toFile();
+        byte[] pieceContent = new byte[(int) piece.length()];
         InputStream inputStream;
         try {
             inputStream = new FileInputStream(piece);
@@ -96,9 +77,7 @@ public class Decode {
     }
 
     public static void main(String[] args) {
-        Decode decode = new Decode(
-                "/home/kushal/.P2P/myuser/03afa7aae4b80a056f9a41bfdec79be2679c5e469aa8224fb8884f823da3ebef/brave-browser.svg.metadata",
-                "/home/kushal/.P2P/myuser");
+        Decode decode = new Decode("/home/kushal/Downloads/flow.txt.metadata", "/home/kushal/.P2P/kushal");
         decode.Merge();
     }
 }

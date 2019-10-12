@@ -60,8 +60,8 @@ public class Register {
 	 */
 	private void initialize() {
 		registerFrame = new JFrame();
-		registerFrame.setIconImage(Toolkit.getDefaultToolkit().getImage(
-				"C:\\Users\\91860\\Desktop\\Project\\gui\\src\\imgs\\Profile_GroupFriend-RoundedBlack-512.png"));
+		registerFrame.setIconImage(
+				Toolkit.getDefaultToolkit().getImage("/gui/src/imgs/Profile_GroupFriend-RoundedBlack-512.png"));
 		registerFrame.setSize(800, 571);
 		registerFrame.setLocationRelativeTo(null);
 		registerFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -214,7 +214,7 @@ public class Register {
 		registerFrame.getContentPane().add(btnSubmit);
 
 		JLabel backgroundLabel = new JLabel("");
-		backgroundLabel.setIcon(new ImageIcon(Register.class.getResource("/imgs/regbg.jpg")));
+		backgroundLabel.setIcon(new ImageIcon(Register.class.getResource("/gui/src/imgs/regbg.jpg")));
 		backgroundLabel.setLocation(0, -71);
 		backgroundLabel.setSize(828, 642);
 		registerFrame.getContentPane().add(backgroundLabel);

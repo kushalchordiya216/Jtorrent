@@ -14,7 +14,7 @@ public class Peer {
     private Socket trackerEndpoint = null;
     private ObjectOutputStream writeToTracker = null;
     private ObjectInputStream readFromTracker = null;
-    private String trackerIP = new String("localhost");
+    private String trackerIP = new String("2409:4042:229d:47ad:3d26:b9c8:3b79:335b");
     private UserProfile userProfile = new UserProfile();
     public String rootDirectory = null;
     HashMap<Integer, String[]> changedFiles = new HashMap<Integer, String[]>();
@@ -118,7 +118,9 @@ public class Peer {
             LeechRequest leechRequest = new LeechRequest(fileLeecher.getPortNo(), merkleRoot); // ask for files on
             this.writeToTracker.writeObject(leechRequest);
             leechRequest.getMerkleRoot();
-            this.leechExecutor.submit((fileLeecher));
+            this.leechExecutor.submit(() -> {
+                fileLeecher.run();
+            });
 
             Integer numSeeders = (Integer) this.readFromTracker.readObject();
             System.out.println("There are " + numSeeders + " seeders currently available");
@@ -133,7 +135,7 @@ public class Peer {
             try {
                 SeedRequest seedRequest = (SeedRequest) this.readFromTracker.readObject();
                 FileSeeder fileSeeder = new FileSeeder(seedRequest, this.rootDirectory);
-                seedRequest.getMerkleRoot();
+                System.out.println(seedRequest.getMerkleRoot());
                 Thread t1 = new Thread(fileSeeder);
                 t1.start();
             } catch (ClassNotFoundException | IOException e) {
@@ -161,7 +163,7 @@ public class Peer {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            }, 0, 5, TimeUnit.SECONDS);
+            }, 0, 30, TimeUnit.SECONDS);
 
             peer.seedExecutor.submit(() -> {
                 peer.SeedFile();

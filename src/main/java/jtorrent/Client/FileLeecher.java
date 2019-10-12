@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+
 import jtorrent.Communication.P2PMessages.*;
 import jtorrent.Encoding.Decode;
 
@@ -18,22 +19,27 @@ import jtorrent.Encoding.Decode;
  * @param rootDirectory the root of the directory where users files are to be
  *                      stored
  */
-public class FileLeecher implements Runnable {
+public class FileLeecher {
 
     private String merkleRoot = null;
     private ServerSocket serverSocket = null;
-    private ArrayList<Socket> peerSockets = null;
+    private ArrayList<Socket> peerSockets = new ArrayList<Socket>();
     private ArrayList<String> pendingPieces = new ArrayList<String>();
     private HashMap<String, String> metadataHash = null;
     private String rootDirectory = null;
     private Decode metaFileDecoder = null;
     private Integer numPiecesRecieved = null;
+    private File rootDirectoryFolder = null;
 
     public FileLeecher(String merkleRoot, HashMap<String, String> metadataHash, String rootDirectory,
             Decode metaFileDecoder) {
         this.merkleRoot = merkleRoot;
         this.metadataHash = metadataHash;
         this.rootDirectory = Paths.get(rootDirectory, this.merkleRoot).toString();
+        this.rootDirectoryFolder = new File(this.rootDirectory);
+        if (!this.rootDirectoryFolder.exists()) {
+            this.rootDirectoryFolder.mkdirs();
+        }
         this.metadataHash.remove("merkleRoot");
         this.metadataHash.remove("Name");
         this.metadataHash.remove("Tracker");
@@ -48,8 +54,11 @@ public class FileLeecher implements Runnable {
         }
     }
 
-    synchronized public void updatePendingPieces(String pieceHash) {
+    public void updatePendingPieces(String pieceHash) {
         this.pendingPieces.remove(pieceHash);
+        if (pendingPieces.size() == 0) {
+            disconnect();
+        }
     }
 
     public Integer getPortNo() {
@@ -66,7 +75,6 @@ public class FileLeecher implements Runnable {
             try {
                 ObjectOutputStream writeToSeeder = new ObjectOutputStream(socket.getOutputStream());
                 writeToSeeder.writeObject(distributionMessage);
-                writeToSeeder.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -75,17 +83,17 @@ public class FileLeecher implements Runnable {
 
     public void writePiecetoDisk(String pieceHash, byte[] content) {
         File newPiece = Paths.get(this.rootDirectory, pieceHash).toFile();
-        if (!newPiece.exists()) {
-            try {
+        try {
+            if (!newPiece.exists()) {
                 newPiece.createNewFile();
-                OutputStream writeToFile = new FileOutputStream(newPiece);
-                writeToFile.write(content);
-                updatePendingPieces(pieceHash);
-                this.numPiecesRecieved++;
-                writeToFile.close();
-            } catch (IOException e) {
-                e.printStackTrace();
             }
+            OutputStream writeToFile = new FileOutputStream(newPiece);
+            writeToFile.write(content);
+            updatePendingPieces(pieceHash);
+            this.numPiecesRecieved++;
+            writeToFile.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -132,6 +140,8 @@ public class FileLeecher implements Runnable {
                 e.printStackTrace();
             }
         }
+        System.out.println("All piece received\nReconstructing file ....");
+        this.metaFileDecoder.Merge();
     }
 
     public void leech() {
@@ -143,9 +153,12 @@ public class FileLeecher implements Runnable {
                     System.out.println(socket.getInetAddress().toString() + "\n" + socket.getLocalPort());
                     peerSockets.add(socket);
                     this.BalanceLoad();
-                    new Thread(() -> {
-                        Listener(socket);
-                    });
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Listener(socket);
+                        }
+                    }).start();
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -154,10 +167,12 @@ public class FileLeecher implements Runnable {
         disconnect();
     }
 
-    @Override
     public void run() {
-        leech();
-        System.out.println("All piece received\nReconstructing file ....");
-        this.metaFileDecoder.Merge();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                leech();
+            }
+        }).start();
     }
 }

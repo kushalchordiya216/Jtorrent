@@ -60,8 +60,8 @@ public class Login {
 	private void initialize() {
 		LoginFrame = new JFrame();
 		LoginFrame.getContentPane().setBackground(SystemColor.text);
-		LoginFrame.setIconImage(Toolkit.getDefaultToolkit().getImage(
-				Login.class.getResource("src/main/java/gui/src/gui/imgs/Profile_GroupFriend-RoundedBlack-512.png")));
+		LoginFrame.setIconImage(Toolkit.getDefaultToolkit()
+				.getImage(Login.class.getResource("/gui/src/imgs/Profile_GroupFriend-RoundedBlack-512.png")));
 		LoginFrame.setResizable(false);
 		LoginFrame.setSize(800, 600);
 		LoginFrame.setLocationRelativeTo(null);
@@ -79,7 +79,7 @@ public class Login {
 		LoginFrame.getContentPane().add(jTorrentLabel);
 
 		JLabel userNameLabel = new JLabel("Username");
-		userNameLabel.setIcon(new ImageIcon(Login.class.getResource("/imgs/768px-Circle-icons-profile.jpeg")));
+		userNameLabel.setIcon(new ImageIcon(Login.class.getResource("/gui/src/imgs/768px-Circle-icons-profile.jpeg")));
 		userNameLabel.setForeground(new Color(255, 255, 255));
 		userNameLabel.setFont(new Font("Berlin Sans FB Demi", Font.BOLD, 28));
 		userNameLabel.setBounds(234, 165, 174, 40);
@@ -165,14 +165,14 @@ public class Login {
 		LoginFrame.getContentPane().add(ForgetPasswordLabel);
 
 		JLabel lblPassword = new JLabel(" Password");
-		lblPassword.setIcon(new ImageIcon(Login.class.getResource("/imgs/images.png")));
+		lblPassword.setIcon(new ImageIcon(Login.class.getResource("/gui/src/imgs/images.png")));
 		lblPassword.setForeground(Color.WHITE);
 		lblPassword.setFont(new Font("Berlin Sans FB Demi", Font.BOLD, 28));
 		lblPassword.setBounds(234, 272, 174, 40);
 		LoginFrame.getContentPane().add(lblPassword);
 
 		JLabel lblbg = new JLabel("");
-		lblbg.setIcon(new ImageIcon(Login.class.getResource("/imgs/qw11.jpg")));
+		lblbg.setIcon(new ImageIcon(Login.class.getResource("/gui/src/imgs/qw11.jpg")));
 		lblbg.setBounds(41, 0, 797, 637);
 		LoginFrame.getContentPane().add(lblbg);
 

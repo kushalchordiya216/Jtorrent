@@ -54,16 +54,17 @@ public class Encode {
             long index = 0;
             long numPieces = totalFileLength / (1024 * 1024);
             int remainder = (int) totalFileLength % (1024 * 1024);
-            do {
-                byte[] piece = new byte[1024];
+            while (numPieces > 0) {
+                byte[] piece = new byte[1024 * 1024];
                 reader.read(piece);
                 String hash = Hashing.sha256().hashBytes(piece).toString();
                 this.writePiece(hash, piece);
                 MetaDataHash.put(Long.toString(index), hash);
                 index++;
                 numPieces--;
-            } while (numPieces > 0);
+            }
             byte[] lastPiece = new byte[remainder];
+            System.out.println("last piece is " + remainder + " bytes");
             reader.read(lastPiece);
             reader.close();
             String hash = Hashing.sha256().hashBytes(lastPiece).toString();
