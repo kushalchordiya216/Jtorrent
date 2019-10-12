@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
+
 import jtorrent.Communication.Requests.*;
 import jtorrent.Encoding.*;
 
@@ -14,7 +15,7 @@ public class Peer {
     private Socket trackerEndpoint = null;
     private ObjectOutputStream writeToTracker = null;
     private ObjectInputStream readFromTracker = null;
-    private String trackerIP = new String("2409:4042:229d:47ad:3d26:b9c8:3b79:335b");
+    private String trackerIP = new String("2409:4042:2595:4b85:5b7e:d25c:51bd:c766");
     private UserProfile userProfile = new UserProfile();
     public String rootDirectory = null;
     HashMap<Integer, String[]> changedFiles = new HashMap<Integer, String[]>();
@@ -34,6 +35,7 @@ public class Peer {
         }
     }
 
+    // /home/kushal/Downloads/paniyosa.mp3.metadata
     /**
      * 
      * @param type     "LOGIN" OR "REGISTER"
@@ -115,16 +117,14 @@ public class Peer {
             String merkleRoot = decode.getMerkleRoot();
 
             FileLeecher fileLeecher = new FileLeecher(merkleRoot, decode.getMetaDataHash(), rootDirectory, decode); // start
+            System.out.println(fileLeecher.getPortNo());
             LeechRequest leechRequest = new LeechRequest(fileLeecher.getPortNo(), merkleRoot); // ask for files on
             this.writeToTracker.writeObject(leechRequest);
             leechRequest.getMerkleRoot();
             this.leechExecutor.submit(() -> {
                 fileLeecher.run();
             });
-
-            Integer numSeeders = (Integer) this.readFromTracker.readObject();
-            System.out.println("There are " + numSeeders + " seeders currently available");
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -136,8 +136,7 @@ public class Peer {
                 SeedRequest seedRequest = (SeedRequest) this.readFromTracker.readObject();
                 FileSeeder fileSeeder = new FileSeeder(seedRequest, this.rootDirectory);
                 System.out.println(seedRequest.getMerkleRoot());
-                Thread t1 = new Thread(fileSeeder);
-                t1.start();
+                this.seedExecutor.submit(fileSeeder);
             } catch (ClassNotFoundException | IOException e) {
                 System.out.println("Client has been stopped.\nTerminating all seeds");
                 try {
@@ -154,7 +153,7 @@ public class Peer {
         Scanner sc = new Scanner(System.in);
         try {
             peer.Connect(); // connect to tracker endpoint by providing username and password
-            // as(~/home/.P2P/{username}
+
             peer.updateExecutor.scheduleAtFixedRate(() -> {
                 try {
                     peer.Update();
@@ -163,11 +162,15 @@ public class Peer {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            }, 0, 30, TimeUnit.SECONDS);
+            }, 0, 10, TimeUnit.SECONDS);
 
-            peer.seedExecutor.submit(() -> {
-                peer.SeedFile();
-            });
+            // start function to listen for seed requests in the back ground
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    peer.SeedFile();
+                }
+            }).start();
 
             while (true) {
                 System.out.println("1.Request File\n2.Publish\n3.Exit");
@@ -187,11 +190,10 @@ public class Peer {
                 case "3":
                     peer.Logout();
                     System.out.println("Going offline, all processes are being stopped");
-                    Thread.sleep(5000);
                     System.exit(0);
                 }
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             System.out.println("Error establishing connection with tracker");
         }
         sc.close();

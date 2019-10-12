@@ -66,8 +66,7 @@ public class PeerThread implements Runnable {
                 peerIps.add(rs.getString("currentIP"));
                 System.out.println(rs.getString("currentIP") + "is potential seeder");
             }
-            this.writeToPeer.writeObject(peerIps.size());
-        } catch (SQLException | IOException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         this.tracker.requestSeed(peerIps, leechRequest.getHostName(), leechRequest.getPort(),
@@ -163,10 +162,8 @@ public class PeerThread implements Runnable {
                 });
             } catch (ClassNotFoundException | IOException e) {
                 System.out.println(this.username + " has disconnected!");
-                // connectRequest.setActive(false);
-                // connectRequest.setHostName(connectRequest.getUsername());
-                // result = userTable.Update(connectRequest);
-
+                this.tracker.removeConnection(this.username, this);
+                userTable.Update(this.username, this.username, false);
                 try {
                     Thread.currentThread().join();
                 } catch (InterruptedException e1) {

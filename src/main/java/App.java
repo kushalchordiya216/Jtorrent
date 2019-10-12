@@ -7,7 +7,6 @@ public class App {
         new Thread(() -> {
             tracker.runTracker();
         });
-        System.out.println(System.getProperty("user.dir"));
         Login login = new Login();
         login.main();
     }

@@ -57,6 +57,18 @@ public class UserTable implements CRUDInterface {
         }
     }
 
+    public void Update(String username, String hostname, Boolean active) {
+        try {
+            stmt = connection.prepareStatement("UPDATE Users SET currentIP=?,active=? WHERE username=?");
+            stmt.setString(1, hostname);
+            stmt.setBoolean(2, active);
+            stmt.setString(3, username);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Error in userTable update operation!");
+        }
+    }
+
     @Override
     public void Delete(Request request) {
 

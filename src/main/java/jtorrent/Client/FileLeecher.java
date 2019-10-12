@@ -5,6 +5,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 
 import jtorrent.Communication.P2PMessages.*;
@@ -19,11 +20,11 @@ import jtorrent.Encoding.Decode;
  * @param rootDirectory the root of the directory where users files are to be
  *                      stored
  */
-public class FileLeecher {
+public class FileLeecher implements Runnable {
 
     private String merkleRoot = null;
     private ServerSocket serverSocket = null;
-    private ArrayList<Socket> peerSockets = new ArrayList<Socket>();
+    private ArrayList<Socket> peerSockets = null;
     private ArrayList<String> pendingPieces = new ArrayList<String>();
     private HashMap<String, String> metadataHash = null;
     private String rootDirectory = null;
@@ -33,6 +34,7 @@ public class FileLeecher {
 
     public FileLeecher(String merkleRoot, HashMap<String, String> metadataHash, String rootDirectory,
             Decode metaFileDecoder) {
+        this.peerSockets = new ArrayList<Socket>();
         this.merkleRoot = merkleRoot;
         this.metadataHash = metadataHash;
         this.rootDirectory = Paths.get(rootDirectory, this.merkleRoot).toString();
@@ -44,8 +46,12 @@ public class FileLeecher {
         this.metadataHash.remove("Name");
         this.metadataHash.remove("Tracker");
         this.metadataHash.remove("fileSizeMB");
-        this.pendingPieces = new ArrayList<String>(metadataHash.values());
+        Collection<String> hashvalues = metadataHash.values();
+        this.pendingPieces = new ArrayList<String>(hashvalues);
         this.metaFileDecoder = metaFileDecoder;
+        for (int i = 0; i < pendingPieces.size(); i++) {
+            System.out.println(pendingPieces.get(i));
+        }
         this.numPiecesRecieved = 0;
         try {
             this.serverSocket = new ServerSocket(0);
@@ -57,7 +63,10 @@ public class FileLeecher {
     public void updatePendingPieces(String pieceHash) {
         this.pendingPieces.remove(pieceHash);
         if (pendingPieces.size() == 0) {
+            System.out.println("All hashes removed");
             disconnect();
+            System.out.println("All piece received\nReconstructing file ....");
+            this.metaFileDecoder.Merge();
         }
     }
 
@@ -69,12 +78,14 @@ public class FileLeecher {
         Integer numPeers = this.peerSockets.size();
         Integer index = 0;
         for (Socket socket : peerSockets) {
+            System.out.println("Peers = " + numPeers + "\n index = " + index);
             DistributionMessage distributionMessage;
             distributionMessage = new DistributionMessage(numPeers, index, this.numPiecesRecieved);
             index++;
             try {
                 ObjectOutputStream writeToSeeder = new ObjectOutputStream(socket.getOutputStream());
                 writeToSeeder.writeObject(distributionMessage);
+                // writeToSeeder.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -98,6 +109,7 @@ public class FileLeecher {
     }
 
     public void Listener(Socket socket) {
+        System.out.println("Inside new thread");
         try {
             ObjectInputStream receiveFromPeer = new ObjectInputStream(socket.getInputStream());
             while (!socket.isClosed() && !pendingPieces.isEmpty()) {
@@ -107,6 +119,7 @@ public class FileLeecher {
                     // peer is sending over a piece
                     Piece piece = (Piece) message;
                     String pieceHash = piece.getPieceHash();
+                    System.out.println(pieceHash);
                     if (pendingPieces.contains(pieceHash)) {
                         writePiecetoDisk(pieceHash, piece.getContent());
                     }
@@ -140,35 +153,37 @@ public class FileLeecher {
                 e.printStackTrace();
             }
         }
-        System.out.println("All piece received\nReconstructing file ....");
-        this.metaFileDecoder.Merge();
     }
 
     public void leech() {
         while (this.pendingPieces.size() != 0) {
             Socket socket;
             try {
-                if (this.peerSockets.size() <= 10) {
-                    socket = this.serverSocket.accept();
-                    System.out.println(socket.getInetAddress().toString() + "\n" + socket.getLocalPort());
-                    peerSockets.add(socket);
-                    this.BalanceLoad();
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Listener(socket);
-                        }
-                    }).start();
-                }
+                // if (this.peerSockets.size() <= 10) {
+                System.out.println("Inside leacher");
+                socket = this.serverSocket.accept();
+                System.out.println("Seeder connected" + socket);
+                peerSockets.add(socket);
+                System.out.println("After peer socket");
+                this.BalanceLoad();
+                System.out.println("After load balance");
+                new Thread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        Listener(socket);
+                    }
+                }).start();
+                // }
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-        disconnect();
     }
 
     public void run() {
         new Thread(new Runnable() {
+
             @Override
             public void run() {
                 leech();
