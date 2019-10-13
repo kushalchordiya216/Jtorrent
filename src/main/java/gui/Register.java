@@ -1,12 +1,10 @@
-package gui.src.gui;
+package gui;
 
 import java.awt.EventQueue;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 
-import java.awt.BorderLayout;
 import java.awt.Font;
 import javax.swing.JTextField;
 import javax.swing.JPasswordField;
@@ -60,8 +58,9 @@ public class Register {
 	 */
 	private void initialize() {
 		registerFrame = new JFrame();
-		registerFrame.setIconImage(
-				Toolkit.getDefaultToolkit().getImage("/gui/src/imgs/Profile_GroupFriend-RoundedBlack-512.png"));
+		registerFrame.setResizable(false);
+		registerFrame.setIconImage(Toolkit.getDefaultToolkit().getImage(
+				"C:\\Users\\91860\\Desktop\\Project\\gui\\src\\imgs\\Profile_GroupFriend-RoundedBlack-512.png"));
 		registerFrame.setSize(800, 571);
 		registerFrame.setLocationRelativeTo(null);
 		registerFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -70,13 +69,13 @@ public class Register {
 		JLabel registerLabel = new JLabel("REGISTER");
 		registerLabel.setForeground(new Color(255, 255, 255));
 		registerLabel.setFont(new Font("Berlin Sans FB Demi", Font.BOLD, 46));
-		registerLabel.setBounds(309, 10, 211, 49);
+		registerLabel.setBounds(309, 10, 316, 49);
 		registerFrame.getContentPane().add(registerLabel);
 
 		JLabel userNameLabel = new JLabel("Username -");
 		userNameLabel.setForeground(new Color(255, 255, 255));
 		userNameLabel.setFont(new Font("Rockwell Condensed", Font.BOLD, 26));
-		userNameLabel.setBounds(193, 69, 124, 31);
+		userNameLabel.setBounds(138, 69, 179, 31);
 		registerFrame.getContentPane().add(userNameLabel);
 
 		userNameTextField = new JTextField();
@@ -87,7 +86,7 @@ public class Register {
 		JLabel passwordLabel = new JLabel("Password -");
 		passwordLabel.setForeground(new Color(255, 255, 255));
 		passwordLabel.setFont(new Font("Rockwell Condensed", Font.BOLD, 27));
-		passwordLabel.setBounds(193, 156, 124, 31);
+		passwordLabel.setBounds(138, 156, 179, 31);
 		registerFrame.getContentPane().add(passwordLabel);
 
 		passwordField = new JPasswordField();
@@ -97,7 +96,7 @@ public class Register {
 		JLabel ConfirmPasswordLabel = new JLabel("Confirm Password -");
 		ConfirmPasswordLabel.setForeground(new Color(255, 255, 255));
 		ConfirmPasswordLabel.setFont(new Font("Rockwell Condensed", Font.BOLD, 22));
-		ConfirmPasswordLabel.setBounds(138, 240, 178, 37);
+		ConfirmPasswordLabel.setBounds(80, 240, 236, 37);
 		registerFrame.getContentPane().add(ConfirmPasswordLabel);
 
 		confirmPasswordfield = new JPasswordField();
@@ -107,7 +106,7 @@ public class Register {
 		JLabel checkPasswordLabel = new JLabel("Password not matches.");
 		checkPasswordLabel.setFont(new Font("Times New Roman", Font.BOLD, 16));
 		checkPasswordLabel.setForeground(new Color(255, 0, 0));
-		checkPasswordLabel.setBounds(327, 274, 178, 25);
+		checkPasswordLabel.setBounds(327, 274, 236, 25);
 		checkPasswordLabel.setVisible(false);
 		registerFrame.getContentPane().add(checkPasswordLabel);
 
@@ -141,11 +140,11 @@ public class Register {
 		JLabel questionLabel = new JLabel("Enter your nick name -");
 		questionLabel.setForeground(new Color(255, 255, 255));
 		questionLabel.setFont(new Font("Times New Roman", Font.BOLD, 24));
-		questionLabel.setBounds(48, 17, 275, 29);
+		questionLabel.setBounds(48, 17, 377, 44);
 		panel.add(questionLabel);
 
 		nicknametextfield = new JTextField();
-		nicknametextfield.setBounds(58, 50, 230, 39);
+		nicknametextfield.setBounds(58, 61, 230, 44);
 		panel.add(nicknametextfield);
 		nicknametextfield.setColumns(10);
 
@@ -193,8 +192,8 @@ public class Register {
 				String pass, confirmpass, uname, nickname;
 				nickname = nicknametextfield.getText().toString();
 				uname = userNameTextField.getText().toString();
-				pass = passwordField.getText().toString();
-				confirmpass = confirmPasswordfield.getText().toString();
+				pass = passwordField.getPassword().toString();
+				confirmpass = confirmPasswordfield.getPassword().toString();
 				if (uname.equals("")) {
 					lblEnterUsername.setVisible(true);
 				} else if (pass.equals("")) {
@@ -210,11 +209,11 @@ public class Register {
 				}
 			}
 		});
-		btnSubmit.setBounds(281, 465, 211, 37);
+		btnSubmit.setBounds(281, 465, 251, 49);
 		registerFrame.getContentPane().add(btnSubmit);
 
 		JLabel backgroundLabel = new JLabel("");
-		backgroundLabel.setIcon(new ImageIcon(Register.class.getResource("/gui/src/imgs/regbg.jpg")));
+		backgroundLabel.setIcon(new ImageIcon(Register.class.getResource("/imgs/regbg.jpg")));
 		backgroundLabel.setLocation(0, -71);
 		backgroundLabel.setSize(828, 642);
 		registerFrame.getContentPane().add(backgroundLabel);

@@ -1,5 +1,5 @@
 import jtorrent.Tracker.Tracker;
-import gui.src.gui.*;
+import gui.*;
 
 public class App {
     public static void main(String[] args) {

@@ -9,8 +9,9 @@ public class Decode {
     private String merkleRoot;
     private String fileName, metaFileName;
     private String rootDirectory, currentDirectory;
-    private File metaFile, file;
+    private File metaFile, file, metaFileCopy;
 
+    @SuppressWarnings({ "unchecked" })
     public Decode(String metaFileName, String rootDirectory) {
         try {
             this.metaFileName = metaFileName;
@@ -26,9 +27,7 @@ public class Decode {
             }
             this.merkleRoot = this.metaDataHash.get("merkleRoot");
             this.fileName = this.metaDataHash.get("Name");
-            System.out.println(this.fileName);
             this.file = Paths.get(this.currentDirectory, this.fileName).toFile();
-            System.out.println(this.file.getName());
             this.rootDirectory = Paths.get(rootDirectory, this.merkleRoot).toString();
             readMetaFile.close();
         } catch (IOException e) {
@@ -40,11 +39,26 @@ public class Decode {
     public void Merge() {
         try {
             OutputStream outputStream = new FileOutputStream(this.file);
-            for (int i = 0; i < metaDataHash.size() - 4; i++) {
+            for (int i = 0; i < metaDataHash.size(); i++) {
                 byte[] content = read(this.metaDataHash.get(Integer.toString(i)));
                 outputStream.write(content);
             }
             outputStream.close();
+            createMetaCopy();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void createMetaCopy() {
+        this.metaFileCopy = Paths.get(this.rootDirectory, this.metaFileName).toFile();
+        try {
+            if (!this.metaFileCopy.exists()) {
+                this.metaFileCopy.createNewFile();
+            }
+            ObjectOutputStream fileWriter = new ObjectOutputStream(new FileOutputStream(this.metaFileCopy));
+            fileWriter.writeObject(this.metaDataHash);
+            fileWriter.close();
         } catch (IOException e) {
             e.printStackTrace();
         }

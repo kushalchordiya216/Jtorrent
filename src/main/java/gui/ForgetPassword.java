@@ -1,4 +1,4 @@
-package gui.src.gui;
+package gui;
 
 import java.awt.EventQueue;
 
@@ -6,7 +6,6 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
-import java.awt.BorderLayout;
 import javax.swing.JPanel;
 import javax.swing.border.TitledBorder;
 import java.awt.Font;
@@ -54,14 +53,16 @@ public class ForgetPassword {
 	 */
 	private void initialize() {
 		ForgetPasswordFrame = new JFrame();
+		ForgetPasswordFrame.setResizable(false);
 		ForgetPasswordFrame.setIconImage(Toolkit.getDefaultToolkit()
-				.getImage(ForgetPassword.class.getResource("/gui/src/imgs/Profile_GroupFriend-RoundedBlack-512.png")));
+				.getImage(ForgetPassword.class.getResource("/imgs/Profile_GroupFriend-RoundedBlack-512.png")));
 		ForgetPasswordFrame.setSize(800, 600);
 		ForgetPasswordFrame.setLocationRelativeTo(null);
 		ForgetPasswordFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		ForgetPasswordFrame.getContentPane().setLayout(null);
 
 		JPanel panel = new JPanel();
+		panel.setFont(new Font("Times New Roman", Font.PLAIN, 15));
 		panel.setOpaque(false);
 		panel.setBorder(new TitledBorder(null, "Personal Details", TitledBorder.LEADING, TitledBorder.TOP, null, null));
 		panel.setBounds(55, 100, 626, 377);
@@ -71,7 +72,7 @@ public class ForgetPassword {
 		JLabel UsernameLabel = new JLabel("UserName");
 		UsernameLabel.setForeground(new Color(255, 255, 255));
 		UsernameLabel.setFont(new Font("Rockwell Condensed", Font.BOLD, 29));
-		UsernameLabel.setBounds(101, 48, 175, 53);
+		UsernameLabel.setBounds(65, 46, 175, 53);
 		panel.add(UsernameLabel);
 
 		usernametextField = new JTextField();
@@ -82,7 +83,7 @@ public class ForgetPassword {
 		JLabel NicknameLabel = new JLabel("NickName");
 		NicknameLabel.setForeground(new Color(255, 255, 255));
 		NicknameLabel.setFont(new Font("Rockwell Condensed", Font.BOLD, 26));
-		NicknameLabel.setBounds(101, 174, 140, 53);
+		NicknameLabel.setBounds(65, 174, 175, 59);
 		panel.add(NicknameLabel);
 
 		nicknametextfield = new JTextField();
@@ -94,21 +95,21 @@ public class ForgetPassword {
 		btnSubmit.setForeground(new Color(0, 102, 153));
 		btnSubmit.setBackground(new Color(255, 255, 255));
 		btnSubmit.setFont(new Font("Rockwell Condensed", Font.BOLD, 19));
-		btnSubmit.setBounds(233, 292, 175, 38);
+		btnSubmit.setBounds(233, 292, 213, 53);
 		panel.add(btnSubmit);
 
 		JLabel lblEnterUsername = new JLabel("Enter username");
 		lblEnterUsername.setFont(new Font("Tahoma", Font.PLAIN, 18));
 		lblEnterUsername.setVisible(false);
 		lblEnterUsername.setForeground(new Color(255, 0, 0));
-		lblEnterUsername.setBounds(260, 97, 128, 38);
+		lblEnterUsername.setBounds(260, 97, 221, 38);
 		panel.add(lblEnterUsername);
 
 		JLabel lblEnterNickName = new JLabel("Enter Nick name");
 		lblEnterNickName.setFont(new Font("Tahoma", Font.PLAIN, 17));
 		lblEnterNickName.setVisible(false);
 		lblEnterNickName.setForeground(new Color(255, 0, 0));
-		lblEnterNickName.setBounds(260, 233, 148, 25);
+		lblEnterNickName.setBounds(260, 233, 221, 25);
 		panel.add(lblEnterNickName);
 
 		JLabel borderLabel = new JLabel("");
@@ -118,11 +119,11 @@ public class ForgetPassword {
 		JLabel lblForgotPasswordDont = new JLabel("Forgot Password?? Don't Worry , We will fix it ...!");
 		lblForgotPasswordDont.setForeground(Color.WHITE);
 		lblForgotPasswordDont.setFont(new Font("Rockwell Condensed", Font.BOLD, 29));
-		lblForgotPasswordDont.setBounds(82, 37, 618, 53);
+		lblForgotPasswordDont.setBounds(79, 30, 721, 60);
 		ForgetPasswordFrame.getContentPane().add(lblForgotPasswordDont);
 
 		JLabel backgroundLabel = new JLabel("");
-		backgroundLabel.setIcon(new ImageIcon(ForgetPassword.class.getResource("/gui/src/imgs/regbg.jpg")));
+		backgroundLabel.setIcon(new ImageIcon(ForgetPassword.class.getResource("/imgs/regbg.jpg")));
 		backgroundLabel.setBounds(0, -30, 800, 600);
 		ForgetPasswordFrame.getContentPane().add(backgroundLabel);
 

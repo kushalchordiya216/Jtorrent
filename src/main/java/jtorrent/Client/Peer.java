@@ -13,11 +13,12 @@ public class Peer {
 
     Scanner sc = new Scanner(System.in);
     private Socket trackerEndpoint = null;
+    public Boolean isLive = false;
     private ObjectOutputStream writeToTracker = null;
     private ObjectInputStream readFromTracker = null;
     // 2409:4042:229d:47ad:3d26:b9c8:3b79:335b
     // 2409:4042:2595:4b85:5b7e:d25c:51bd:c766
-    private String trackerIP = new String("2409:4042:229d:47ad:3d26:b9c8:3b79:335b");
+    private String trackerIP = new String("localhost");
     private UserProfile userProfile = new UserProfile();
     public String rootDirectory = null;
     HashMap<Integer, String[]> changedFiles = new HashMap<Integer, String[]>();
@@ -29,6 +30,7 @@ public class Peer {
     public Peer() {
         try {
             this.trackerEndpoint = new Socket(trackerIP, 8080);
+            isLive = true;
             this.writeToTracker = new ObjectOutputStream(trackerEndpoint.getOutputStream());
             this.readFromTracker = new ObjectInputStream(trackerEndpoint.getInputStream());
         } catch (IOException e) {
@@ -38,14 +40,6 @@ public class Peer {
     }
 
     // /home/kushal/Downloads/paniyosa.mp3.metadata
-    /**
-     * 
-     * @param type     "LOGIN" OR "REGISTER"
-     * @param username username of the peer
-     * @param password password of the user
-     * @throws IOException
-     * @throws ClassNotFoundException
-     */
     public void Connect() throws IOException {
         String type = null;
         Integer loginStatus = 0;
@@ -107,7 +101,7 @@ public class Peer {
         fileIndexManager.CheckForChanges();
         UpdateRequest updateRequest = new UpdateRequest(this.userProfile.getUsername(),
                 fileIndexManager.getAddedMerkleRoots(), fileIndexManager.getRemovedMerkleRoots(),
-                fileIndexManager.getAddedFileNames(), fileIndexManager.getRemovedFileNames());
+                fileIndexManager.getAddedFileNames());
         this.writeToTracker.writeObject(updateRequest);
     }
 
@@ -120,6 +114,7 @@ public class Peer {
 
             FileLeecher fileLeecher = new FileLeecher(merkleRoot, decode.getMetaDataHash(), rootDirectory, decode); // start
             System.out.println(fileLeecher.getPortNo());
+            System.out.println(merkleRoot);
             LeechRequest leechRequest = new LeechRequest(fileLeecher.getPortNo(), merkleRoot); // ask for files on
             this.writeToTracker.writeObject(leechRequest);
             leechRequest.getMerkleRoot();
@@ -150,50 +145,57 @@ public class Peer {
         }
     }
 
+    /**
+     * 
+     * @param args
+     */
     public static void main(String[] args) {
         Peer peer = new Peer();
         Scanner sc = new Scanner(System.in);
         try {
-            peer.Connect(); // connect to tracker endpoint by providing username and password
+            if (peer.isLive) {
+                peer.Connect(); // connect to tracker endpoint by providing username and password
+                peer.updateExecutor.scheduleAtFixedRate(() -> {
+                    try {
+                        peer.Update();
+                        // periodically send updates to tracker about files that have been added or
+                        // deleted
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }, 0, 10, TimeUnit.SECONDS);
+                // /home/kushal/Documents/paniyosa.mp3.metadata
+                // start function to listen for seed requests in the back ground
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        peer.SeedFile();
+                    }
+                }).start();
 
-            peer.updateExecutor.scheduleAtFixedRate(() -> {
-                try {
-                    peer.Update();
-                    // periodically send updates to tracker about files that have been added or
-                    // deleted
-                } catch (IOException e) {
-                    e.printStackTrace();
+                while (true) {
+                    System.out.println("1.Request File\n2.Publish\n3.Exit");
+                    System.out.println(
+                            "Note that you can request a total of 3 simultaneous leechs at a time, further than that will be queued!");
+                    String choice = sc.nextLine();
+                    switch (choice) {
+                    case "1":
+                        peer.leechFile();
+                        break;
+                    case "2":
+                        System.out.println("Enter name of file you want to publish");
+                        String fileName = sc.nextLine();
+                        Encode encode = new Encode(fileName, peer.rootDirectory, peer.trackerEndpoint);
+                        encode.Split();
+                        break;
+                    case "3":
+                        peer.Logout();
+                        System.out.println("Going offline, all processes are being stopped");
+                        System.exit(0);
+                    }
                 }
-            }, 0, 10, TimeUnit.SECONDS);
-
-            // start function to listen for seed requests in the back ground
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    peer.SeedFile();
-                }
-            }).start();
-
-            while (true) {
-                System.out.println("1.Request File\n2.Publish\n3.Exit");
-                System.out.println(
-                        "Note that you can request a total of 3 simultaneous leechs at a time, further than that will be queued!");
-                String choice = sc.nextLine();
-                switch (choice) {
-                case "1":
-                    peer.leechFile();
-                    break;
-                case "2":
-                    System.out.println("Enter name of file you want to publish");
-                    String fileName = sc.nextLine();
-                    Encode encode = new Encode(fileName, peer.rootDirectory, peer.trackerEndpoint);
-                    encode.Split();
-                    break;
-                case "3":
-                    peer.Logout();
-                    System.out.println("Going offline, all processes are being stopped");
-                    System.exit(0);
-                }
+            } else {
+                // TODO: code for connecting to tracker through metadata
             }
         } catch (IOException e) {
             System.out.println("Error establishing connection with tracker");

@@ -45,8 +45,8 @@ public class PeerThread implements Runnable {
 
     public void processUpdateRequest(UpdateRequest updateRequest) {
         updateRequest.setHostName(this.socket.getInetAddress().toString());
-        System.out.println(updateRequest.getAddedFileNames()[0]);
-        System.out.println(updateRequest.getAddedMerkleRoots()[0]);
+        // System.out.println(updateRequest.getAddedFileNames()[0]);
+        // System.out.println(updateRequest.getAddedMerkleRoots()[0]);
         filesTable.Create(updateRequest);
         filesTable.Delete(updateRequest);
     }

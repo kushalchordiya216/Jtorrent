@@ -9,12 +9,11 @@ public class UpdateRequest implements Request {
     private Integer port = null, filesizeMB = null;
 
     public UpdateRequest(String username, String[] addedMerkleFiles, String[] removedMerkleRoots,
-            String[] addedFileNames, String[] removedFileNames) {
+            String[] addedFileNames) {
         this.username = username;
         this.addedMerkleRoots = addedMerkleFiles;
         this.removedMerkleRoots = removedMerkleRoots;
         this.addedFileNames = addedFileNames;
-        this.removedFileNames = removedFileNames;
     }
 
     @Override

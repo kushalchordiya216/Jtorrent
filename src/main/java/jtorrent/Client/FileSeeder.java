@@ -60,7 +60,8 @@ public class FileSeeder implements Runnable {
     }
 
     public void sendPieces() {
-        for (int i = this.numfileRecieved; i < this.totalPieces.length; i++) {
+        int i = this.numfileRecieved;
+        for (; i < this.totalPieces.length; i++) {
             if (i % this.numPeers == this.assignedIndex) {
                 byte[] content;
                 String fileName = totalPieces[i];
@@ -76,6 +77,7 @@ public class FileSeeder implements Runnable {
                     Piece piece = new Piece(fileName, content);
                     writeToPeer.writeObject(piece);
                     System.out.println("Peer no " + this.assignedIndex + " sent file" + fileName);
+                    System.out.println("this was piece no" + i);
                     fileReader.close();
                 } catch (IOException e) {
                     System.out.println("Connection with leecher broken, stopping transmission");
@@ -87,7 +89,7 @@ public class FileSeeder implements Runnable {
                     e.printStackTrace();
                 }
             }
-            if (i == this.totalPieces.length - 1) {
+            if (i >= this.totalPieces.length - 1) {
                 i = 0;
             }
         }
@@ -130,9 +132,5 @@ public class FileSeeder implements Runnable {
                 sendPieces();
             }
         }).start();
-    }
-
-    protected void finalize() {
-        this.disconnect();
     }
 }

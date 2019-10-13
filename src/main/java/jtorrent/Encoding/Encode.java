@@ -11,9 +11,8 @@ import com.google.common.hash.Hashing;
 
 public class Encode {
     private String filename;
-    private File file, metadata, newFile, tempDirectory;
+    private File file, metadata, tempDirectory;
     private FileInputStream reader;
-    private FileOutputStream writer;
     private HashMap<String, String> MetaDataHash = new HashMap<String, String>();
     private String tempDirectoryPath = null, rootDirectoryPath; // tempoarary directory name where encoded pieces will//
                                                                 // be stored

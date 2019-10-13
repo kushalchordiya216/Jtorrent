@@ -7,7 +7,7 @@ import java.util.*;
 public class FileIndexManager {
 
 	String rootDirectory = null;
-	String[] addedMerkleRoots, removedMerkleRoots, addedFileNames, removedFileNames;
+	String[] addedMerkleRoots, removedMerkleRoots, addedFileNames;
 	File indexFile;
 	File folder;
 	ObjectOutputStream fileWriter;
@@ -41,7 +41,12 @@ public class FileIndexManager {
 			ObjectInputStream fileReader = new ObjectInputStream(new FileInputStream(this.indexFile));
 			@SuppressWarnings({ "unchecked" })
 			List<String> prevList = (List<String>) fileReader.readObject();
-
+			for (String oldfile : prevList) {
+				System.out.println(oldfile);
+			}
+			for (String newfile : newList) {
+				System.out.println("newfile: " + newfile);
+			}
 			List<String> addList = new ArrayList<String>(newList);
 			addList.removeAll(prevList);
 			List<String> removeList = new ArrayList<String>(prevList);
@@ -51,7 +56,7 @@ public class FileIndexManager {
 			this.removedMerkleRoots = new String[removeList.size()];
 			this.addedMerkleRoots = addList.toArray(this.addedMerkleRoots);
 			this.removedMerkleRoots = removeList.toArray(this.removedMerkleRoots);
-
+			// TODO: create metafile copy
 			ObjectOutputStream fileWriter = new ObjectOutputStream(new FileOutputStream(this.indexFile, false));
 			fileWriter.writeObject(newList);
 
@@ -65,7 +70,6 @@ public class FileIndexManager {
 
 	public void getFileNames() {
 		ArrayList<String> addedList = new ArrayList<String>();
-		ArrayList<String> removedList = new ArrayList<String>();
 		for (String merkleRoot : this.addedMerkleRoots) {
 			File directory = Paths.get(this.rootDirectory, merkleRoot).toFile();
 			String[] filelist = directory.list();
@@ -75,19 +79,8 @@ public class FileIndexManager {
 				}
 			}
 		}
-		for (String merkleRoot : this.removedMerkleRoots) {
-			File directory = Paths.get(this.rootDirectory, merkleRoot).toFile();
-			String[] filelist = directory.list();
-			for (String file : filelist) {
-				if (file.contains(".metadata")) {
-					removedList.add(file.substring(0, file.length() - 9));
-				}
-			}
-		}
 		this.addedFileNames = new String[addedList.size()];
-		this.removedFileNames = new String[removedList.size()];
 		this.addedFileNames = addedList.toArray(this.addedFileNames);
-		this.removedFileNames = removedList.toArray(this.removedFileNames);
 
 	}
 
@@ -101,9 +94,5 @@ public class FileIndexManager {
 
 	public String[] getAddedFileNames() {
 		return this.addedFileNames;
-	}
-
-	public String[] getRemovedFileNames() {
-		return this.removedFileNames;
 	}
 }
