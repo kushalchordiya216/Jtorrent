@@ -22,6 +22,8 @@ import java.awt.Toolkit;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
+import jtorrent.Client.Peer;
+
 public class Register {
 
 	public JFrame registerFrame;
@@ -29,15 +31,16 @@ public class Register {
 	private JPasswordField passwordField;
 	private JPasswordField confirmPasswordfield;
 	private JTextField nicknametextfield;
+	private Peer peer;
 
 	/**
 	 * Launch the application.
 	 */
-	public static void main(String[] args) {
+	public void main() {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					Register window = new Register();
+					Register window = new Register(peer);
 					window.registerFrame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -49,7 +52,8 @@ public class Register {
 	/**
 	 * Create the application.
 	 */
-	public Register() {
+	public Register(Peer peer) {
+		this.peer = peer;
 		initialize();
 	}
 
@@ -59,8 +63,8 @@ public class Register {
 	private void initialize() {
 		registerFrame = new JFrame();
 		registerFrame.setResizable(false);
-		registerFrame.setIconImage(Toolkit.getDefaultToolkit().getImage(
-				"C:\\Users\\91860\\Desktop\\Project\\gui\\src\\imgs\\Profile_GroupFriend-RoundedBlack-512.png"));
+		registerFrame
+				.setIconImage(Toolkit.getDefaultToolkit().getImage("/imgs/Profile_GroupFriend-RoundedBlack-512.png"));
 		registerFrame.setSize(800, 571);
 		registerFrame.setLocationRelativeTo(null);
 		registerFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -189,23 +193,31 @@ public class Register {
 		btnSubmit.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				String pass, confirmpass, uname, nickname;
-				nickname = nicknametextfield.getText().toString();
-				uname = userNameTextField.getText().toString();
-				pass = passwordField.getPassword().toString();
-				confirmpass = confirmPasswordfield.getPassword().toString();
-				if (uname.equals("")) {
+				String[] credentials = new String[4];
+				credentials[0] = userNameTextField.getText().toString();
+				System.out.println(credentials[0]);
+				credentials[1] = passwordField.getText().toString();
+				System.out.println(credentials[1]);
+				credentials[2] = nicknametextfield.getText().toString();
+				System.out.println(credentials[2]);
+				credentials[3] = confirmPasswordfield.getText().toString();
+				System.out.println(credentials[3]);
+				if (credentials[0].equals("")) {
 					lblEnterUsername.setVisible(true);
-				} else if (pass.equals("")) {
+				} else if (credentials[1].equals("")) {
 					lblEnterPassword.setVisible(true);
-				} else if (!pass.equals(confirmpass)) {
+				} else if (!credentials[1].equals(credentials[3])) {
 					checkPasswordLabel.setVisible(true);
-				} else if (nickname.equals("")) {
+				} else if (credentials[2].equals("")) {
 					checknicknamelabel.setVisible(true);
 				} else {
-					registerFrame.setVisible(false);
-					DashBoard dashboard = new DashBoard();
-					dashboard.DashBoardFrame.setVisible(true);
+
+					String registerStatus = peer.Connect("REGISTER", credentials);
+					if (registerStatus.contains("successful")) {
+						registerFrame.setVisible(false);
+						DashBoard dashboard = new DashBoard(peer);
+						dashboard.DashBoardFrame.setVisible(true);
+					}
 				}
 			}
 		});

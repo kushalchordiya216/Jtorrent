@@ -1,38 +1,36 @@
 package gui;
 
+import java.awt.Font;
+import java.awt.Color;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.Toolkit;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.awt.Cursor;
 import java.awt.EventQueue;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JLabel;
-
-import java.awt.Color;
 import javax.swing.table.TableColumn;
 import javax.swing.ImageIcon;
-import java.awt.Font;
-
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
-
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-
 import javax.swing.border.LineBorder;
 import javax.swing.SwingConstants;
-import java.awt.Toolkit;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-
 import javax.swing.border.MatteBorder;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.awt.Cursor;
+
+import jtorrent.Client.Peer;
 
 public class DashBoard {
 
 	public JFrame DashBoardFrame;
 	JProgressBar progressbar = null;
+	private Peer peer;
 
 	/**
 	 * Launch the application.
@@ -41,8 +39,8 @@ public class DashBoard {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					DashBoard window = new DashBoard();
-					window.DashBoardFrame.setVisible(true);
+					// DashBoard window = new DashBoard();
+					// window.DashBoardFrame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -53,7 +51,8 @@ public class DashBoard {
 	/**
 	 * Create the application.
 	 */
-	public DashBoard() {
+	public DashBoard(Peer peer) {
+		this.peer = peer;
 		initialize();
 	}
 
@@ -300,19 +299,6 @@ public class DashBoard {
 				// btnMyFiles.setBorder(new LineBorder(new Color(0,0,0)));
 				SharePanel.setVisible(false);
 				ProcessPanel.setVisible(false);
-
-				// JPanel allFiles = new JPanel();
-				// allFiles.setBounds(100,100,1000,300);
-				// String scrollHeader[]= {"Filename","Size"};
-				// JLabel fileDetails[][] = new JLabel[10][2];
-				// String scrollHeader[]= {"Filename","Size"};
-				// String categories[] = {"Geeks", "Language", "Java",
-				// "Sudo Placement", "Python",
-				// "CS Subject", "Operating System",
-				// "Data Structure", "Algorithm",
-				// "PHP language", "JAVASCRIPT",
-				// "C Sharp" };
-
 				JScrollPane scrollPane = new JScrollPane();
 				scrollPane.setBounds(50, 100, 1100, 280);
 				scrollPane.setBackground(new Color(0, 153, 153));
@@ -320,23 +306,7 @@ public class DashBoard {
 				JLabel headerHead = new JLabel("File Name");
 				headerHead.setFont(new Font("Times New Roman", Font.BOLD, 22));
 				scrollPane.setColumnHeaderView(headerHead);
-				// DefaultListModel<String> week1=new DefaultListModel<String>();
-				// week1.addElement("abc");
-				// JLabel list2[]= new JLabel[4];
-				// for(int i=0;i<4;i++)
-				// {
-				// list2[i]=new JLabel("abd");
-				// }
 
-				// String week[]=
-				// {"abc","def","ijk","lmn","opsdfsadfdafdsfsbshdfbhjsdbfbsdfbjdsfbhdsbfdsfbdsjfbdsjsbhjbsf
-				// vjsbvb sfjk
-				// vjkfvbfkgbjkfbjfbgbfvbfvnvmnvjfnvjfnvjfnjfvnfjvjnvjfnvnjfnvjfnvjfnvjfnvjfnvfjvnfjnvjfnvfjvnfjvnfjvnfjbjfbsjdbfjsdbfbdsbfhsdbfjbsdfbhdsbfbdsbfjdsbfjhsdbbdsfbdsjfbdbf
-				// hjdsbfhjdbsjfbdsjbfjsdbfjsbdfjb","abc","def","ijk","abc","def","ijk","lmn","opsdfsadfdafdsfs","abc","def","ijk","lmn","opsdfsadfdafdsfs","abc","def","ijk","lmn","opsdfsadfdafdsfs","abc","def","ijk","lmn","opsdfsadfdafdsfs","dssfnghb
-				// fsbgjsbgbfsbhjsbjvbsjbgjfsdbgfdsjbgjfsbjsjgbsjb
-				// gjsdbjbfsjgbjfsbjgbfsjbgjfsbgjfs"};
-				// scrollPane.add(new JLabel(scrollHeader));
-				// JList list = new JList(week);`
 				String filedesc[][] = { {
 						"abc.txtfsdfdsvhfvdshvfdsjvfjdsvjfbdsjfjdsbfdsjhdbsfjsdbfjsdbfjsdbfjsdbfjbsdfjhsbjfbsdjfbsdjbfsdbfjsdbfj",
 						"65" }, { "abc.txt", "65" }, { "abc.txt", "65" }, { "abc.txt", "65" }, { "abc.txt", "65" },
@@ -378,7 +348,7 @@ public class DashBoard {
 			@Override
 
 			public void mouseClicked(MouseEvent e) {
-				JFileChooser metadataChoose = new JFileChooser("C:");
+				JFileChooser metadataChoose = new JFileChooser(System.getProperty("user.home"));
 				int r = metadataChoose.showSaveDialog(null);
 				if (r == JFileChooser.APPROVE_OPTION) {
 					// set the label to the path of the selected file

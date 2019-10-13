@@ -84,11 +84,11 @@ public class UserTable implements CRUDInterface {
             if (rs.next()) {
                 return rs.getString("password");
             } else {
-                return "unverified nickname!";
+                return "No such user!";
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            return "error retrieving password from database";
+            return "Error retrieving password from database";
         }
     }
 

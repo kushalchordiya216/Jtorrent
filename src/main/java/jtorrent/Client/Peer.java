@@ -34,66 +34,97 @@ public class Peer {
             this.writeToTracker = new ObjectOutputStream(trackerEndpoint.getOutputStream());
             this.readFromTracker = new ObjectInputStream(trackerEndpoint.getInputStream());
         } catch (IOException e) {
-            System.out.println(
-                    "Couldnt establish connection with tracker!\nIf you have a metadata file, it may have info about the trackers address!");
+            System.out.println("Couldnt establish connection with tracker!");
         }
     }
 
     // /home/kushal/Downloads/paniyosa.mp3.metadata
-    public void Connect() throws IOException {
-        String type = null;
-        Integer loginStatus = 0;
-        while (loginStatus.equals(0)) {
-            System.out.println("1.Login\n2.Register\n3.Forgot Password");
-            String choice = sc.nextLine();
-            switch (choice) {
-            case "1":
-                type = "LOGIN";
-                this.userProfile.getCredentials();
+    public String Connect(String type, String[] credentials) {
+        String result = "Unknown Error\nPlease Try again";
+        try {
+            switch (type) {
+            case "LOGIN":
+                result = this.Login(credentials);
                 break;
-            case "2":
-                type = "REGISTER";
-                this.userProfile.getCredentials();
-                System.out.println("Enter nickname");
-                this.userProfile.setNickName(sc.nextLine());
+            case "REGISTER":
+                result = this.Register(credentials);
                 break;
-            case "3":
-                type = "FORGOT PASSWORD";
-                System.out.println("Enter username");
-                this.userProfile.setUsername(sc.nextLine());
-                System.out.println("Enter nickname");
-                this.userProfile.setNickName(sc.nextLine());
+            case "FORGOT PASSWORD":
+                result = this.RecoverPassword(credentials);
                 break;
+            case "LOGOUT":
+                result = this.Logout();
             default:
-                type = "REGISTER";
                 break;
             }
-            ConnectRequest connectRequest = new ConnectRequest(8080, type, this.userProfile.getUsername(),
-                    this.userProfile.getPassword(), this.userProfile.getNickName());
-            System.out.println("Logging in ....");
-            writeToTracker.writeObject(connectRequest);
-            try {
-                if (connectRequest.getConnectionType() == "FORGOT PASSWORD") {
-                    String password = (String) this.readFromTracker.readObject();
-                    System.out.println(password);
-                }
-                loginStatus = (Integer) this.readFromTracker.readObject();
-                if (loginStatus.equals(0)) {
-                    System.out.println(
-                            "Given credetials are invalid!\nIf you're registering for the first time this means the username is taken");
-                }
-            } catch (ClassNotFoundException e) {
-                System.out.println("unexpected datatype returned from tracker");
-            }
+        } catch (ClassNotFoundException e) {
+            result = "Unexpected error from tracker!\nPlease try again";
+        } catch (IOException e) {
+            result = "Error connecting to tracker!";
         }
-        this.rootDirectory = Paths.get(System.getProperty("user.home"), ".P2P", this.userProfile.getUsername())
-                .toString();
+        return result;
     }
 
-    public void Logout() throws IOException {
-        ConnectRequest disconnectRequest = new ConnectRequest(8080, "DISCONNECT", this.userProfile.getUsername(),
+    public String Login(String[] credentials) throws IOException, ClassNotFoundException {
+        this.userProfile.setUsername(credentials[0]);
+        this.userProfile.setPassword(credentials[1]);
+
+        ConnectRequest connectRequest = new ConnectRequest(8080, "LOGIN", this.userProfile.getUsername(),
                 this.userProfile.getPassword(), this.userProfile.getNickName());
-        writeToTracker.writeObject(disconnectRequest);
+        this.writeToTracker.writeObject(connectRequest);
+
+        Integer loginStatus = (Integer) this.readFromTracker.readObject();
+
+        if (loginStatus.equals(0)) {
+            return "Username or password incorrect!";
+        } else {
+            this.rootDirectory = Paths.get(System.getProperty("user.home"), ".P2P", this.userProfile.getUsername())
+                    .toString();
+            return "Login successful\nWelcome back " + this.userProfile.getUsername();
+        }
+    }
+
+    public String Register(String[] credentials) throws IOException, ClassNotFoundException {
+        this.userProfile.setUsername(credentials[0]);
+        this.userProfile.setPassword(credentials[1]);
+        this.userProfile.setNickName(credentials[2]);
+
+        ConnectRequest connectRequest = new ConnectRequest(8080, "REGISTER", this.userProfile.getUsername(),
+                this.userProfile.getPassword(), this.userProfile.getNickName());
+        this.writeToTracker.writeObject(connectRequest);
+
+        Integer registerStatus = (Integer) this.readFromTracker.readObject();
+        if (registerStatus.equals(0)) {
+            return "Username is taken!";
+        } else {
+            this.rootDirectory = Paths.get(System.getProperty("user.home"), ".P2P", this.userProfile.getUsername())
+                    .toString();
+            return "Login successful\nWelcome " + this.userProfile.getUsername();
+        }
+    }
+
+    public String RecoverPassword(String[] credentials) throws IOException, ClassNotFoundException {
+        this.userProfile.setUsername(credentials[0]);
+        this.userProfile.setNickName(credentials[1]);
+
+        ConnectRequest connectRequest = new ConnectRequest(8080, "FORGOT PASSWORD", this.userProfile.getUsername(),
+                this.userProfile.getPassword(), this.userProfile.getNickName());
+        writeToTracker.writeObject(connectRequest);
+
+        String password = (String) this.readFromTracker.readObject();
+        System.out.println(password);
+        return password;
+    }
+
+    public String Logout() {
+        try {
+            ConnectRequest disconnectRequest = new ConnectRequest(8080, "DISCONNECT", this.userProfile.getUsername(),
+                    this.userProfile.getPassword(), this.userProfile.getNickName());
+            writeToTracker.writeObject(disconnectRequest);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "Goodbye!";
     }
 
     public void Update() throws IOException {
@@ -105,19 +136,14 @@ public class Peer {
         this.writeToTracker.writeObject(updateRequest);
     }
 
-    public void leechFile() {
+    public void leechFile(String metaFileName) {
         try {
-            System.out.println("Enter metadatafile location");
-            String metaFileName = sc.nextLine();
             Decode decode = new Decode(metaFileName, this.rootDirectory);
             String merkleRoot = decode.getMerkleRoot();
 
             FileLeecher fileLeecher = new FileLeecher(merkleRoot, decode.getMetaDataHash(), rootDirectory, decode); // start
-            System.out.println(fileLeecher.getPortNo());
-            System.out.println(merkleRoot);
             LeechRequest leechRequest = new LeechRequest(fileLeecher.getPortNo(), merkleRoot); // ask for files on
             this.writeToTracker.writeObject(leechRequest);
-            leechRequest.getMerkleRoot();
             this.leechExecutor.submit(() -> {
                 fileLeecher.run();
             });
@@ -145,65 +171,17 @@ public class Peer {
         }
     }
 
-    /**
-     * 
-     * @param args
-     */
-    public static void main(String[] args) {
-        Peer peer = new Peer();
-        Scanner sc = new Scanner(System.in);
-        try {
-            if (peer.isLive) {
-                peer.Connect(); // connect to tracker endpoint by providing username and password
-                peer.updateExecutor.scheduleAtFixedRate(() -> {
-                    try {
-                        peer.Update();
-                        // periodically send updates to tracker about files that have been added or
-                        // deleted
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }, 0, 10, TimeUnit.SECONDS);
-                // /home/kushal/Documents/paniyosa.mp3.metadata
-                // start function to listen for seed requests in the back ground
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        peer.SeedFile();
-                    }
-                }).start();
-
-                while (true) {
-                    System.out.println("1.Request File\n2.Publish\n3.Exit");
-                    System.out.println(
-                            "Note that you can request a total of 3 simultaneous leechs at a time, further than that will be queued!");
-                    String choice = sc.nextLine();
-                    switch (choice) {
-                    case "1":
-                        peer.leechFile();
-                        break;
-                    case "2":
-                        System.out.println("Enter name of file you want to publish");
-                        String fileName = sc.nextLine();
-                        Encode encode = new Encode(fileName, peer.rootDirectory, peer.trackerEndpoint);
-                        encode.Split();
-                        break;
-                    case "3":
-                        peer.Logout();
-                        System.out.println("Going offline, all processes are being stopped");
-                        System.exit(0);
-                    }
-                }
-            } else {
-                // TODO: code for connecting to tracker through metadata
-            }
-        } catch (IOException e) {
-            System.out.println("Error establishing connection with tracker");
-        }
-        sc.close();
+    public void Publish(String fileName) {
+        Encode encode = new Encode(fileName, this.rootDirectory, this.trackerEndpoint);
+        encode.Split();
     }
 
     public String getRootDirectory() {
         return this.rootDirectory;
+    }
+}
+
+class filePairs {
+    public filePairs(String filename, long fileSize) {
     }
 }

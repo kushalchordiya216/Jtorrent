@@ -56,7 +56,7 @@ public class FileIndexManager {
 			this.removedMerkleRoots = new String[removeList.size()];
 			this.addedMerkleRoots = addList.toArray(this.addedMerkleRoots);
 			this.removedMerkleRoots = removeList.toArray(this.removedMerkleRoots);
-			// TODO: create metafile copy
+			// TODO: test metafile copy
 			ObjectOutputStream fileWriter = new ObjectOutputStream(new FileOutputStream(this.indexFile, false));
 			fileWriter.writeObject(newList);
 

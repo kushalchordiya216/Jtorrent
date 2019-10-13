@@ -100,7 +100,6 @@ public class PeerThread implements Runnable {
             connectRequest.setActive(true);
             String password = userTable.RecoverPassword(connectRequest);
             this.writeToPeer.writeObject(password);
-            this.writeToPeer.writeObject((Integer) 0);
             break;
         case "DISCONNECT":
             connectRequest.setActive(false);
@@ -173,7 +172,6 @@ public class PeerThread implements Runnable {
         }
     }
 
-    // TODO: ADD REMOVE FROM PEER INDEX FUNCTION
     /*
      * getter and setters may not be needed, but they're kept for now anyway just in
      * case

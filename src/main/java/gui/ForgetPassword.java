@@ -19,20 +19,23 @@ import java.awt.event.KeyEvent;
 import javax.swing.ImageIcon;
 import java.awt.Toolkit;
 
+import jtorrent.Client.Peer;
+
 public class ForgetPassword {
 
 	public JFrame ForgetPasswordFrame;
 	private JTextField usernametextField;
 	private JTextField nicknametextfield;
+	private Peer peer;
 
 	/**
 	 * Launch the application.
 	 */
-	public static void main(String[] args) {
+	public void main() {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					ForgetPassword window = new ForgetPassword();
+					ForgetPassword window = new ForgetPassword(peer);
 					window.ForgetPasswordFrame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -44,7 +47,8 @@ public class ForgetPassword {
 	/**
 	 * Create the application.
 	 */
-	public ForgetPassword() {
+	public ForgetPassword(Peer peer) {
+		this.peer = peer;
 		initialize();
 	}
 
@@ -131,15 +135,17 @@ public class ForgetPassword {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 
-				String uname, nickname;
-				uname = usernametextField.getText().toString();
-				nickname = nicknametextfield.getText().toString();
-				if (uname.equals("")) {
+				String[] credentials = new String[2];
+				credentials[0] = usernametextField.getText().toString();
+				credentials[1] = nicknametextfield.getText().toString();
+				if (credentials[0].equals("")) {
 					lblEnterUsername.setVisible(true);
-				} else if (nickname.equals("")) {
+				} else if (credentials[1].equals("")) {
 					lblEnterNickName.setVisible(true);
 				} else {
-					JOptionPane.showMessageDialog(backgroundLabel, "Submited");
+					JOptionPane.showMessageDialog(backgroundLabel, "Submitted");
+					String passwordStatus = peer.Connect("FORGOT PASSWORD", credentials);
+					JOptionPane.showMessageDialog(backgroundLabel, passwordStatus);
 				}
 			}
 		});

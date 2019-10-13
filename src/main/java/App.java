@@ -1,13 +1,10 @@
-import jtorrent.Tracker.Tracker;
 import gui.*;
+import jtorrent.Client.Peer;
 
 public class App {
     public static void main(String[] args) {
-        Tracker tracker = new Tracker();
-        new Thread(() -> {
-            tracker.runTracker();
-        });
-        Login login = new Login();
-        login.main();
+        Peer peer = new Peer();
+        Login login = new Login(peer);
+        login.LoginFrame.setVisible(true);
     }
 }

@@ -1,30 +1,33 @@
 package gui;
 
 import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.event.MouseEvent;
+import java.awt.Color;
+import java.awt.event.MouseAdapter;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.Toolkit;
+import java.awt.SystemColor;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.ImageIcon;
-import java.awt.Font;
-import java.awt.event.MouseEvent;
-import java.awt.Color;
 import javax.swing.JTextField;
 import javax.swing.JPasswordField;
 import javax.swing.JButton;
-import java.awt.event.MouseAdapter;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import javax.swing.SwingConstants;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.EmptyBorder;
-import java.awt.Toolkit;
-import java.awt.SystemColor;
+
+import jtorrent.Client.Peer;
 
 public class Login {
 
 	public JFrame LoginFrame;
 	private JTextField userNametextField;
 	private JPasswordField passwordField;
+	private Peer peer;
 
 	/**
 	 * Launch the application.
@@ -33,7 +36,7 @@ public class Login {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					Login window = new Login();
+					Login window = new Login(peer);
 					window.LoginFrame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -45,7 +48,8 @@ public class Login {
 	/**
 	 * Create the application.
 	 */
-	public Login() {
+	public Login(Peer peer) {
+		this.peer = peer;
 		initialize();
 	}
 
@@ -111,7 +115,7 @@ public class Login {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				LoginFrame.setVisible(false);
-				Register register = new Register();
+				Register register = new Register(peer);
 				register.registerFrame.setVisible(true);
 			}
 		});
@@ -134,7 +138,7 @@ public class Login {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				LoginFrame.setVisible(false);
-				ForgetPassword forgetPassword = new ForgetPassword();
+				ForgetPassword forgetPassword = new ForgetPassword(peer);
 				forgetPassword.ForgetPasswordFrame.setVisible(true);
 			}
 		});
@@ -170,18 +174,21 @@ public class Login {
 		btnLogin.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				String uname, pass;
-				uname = userNametextField.getText().toString();
-				pass = passwordField.getPassword().toString();
-				if (uname.equals("")) {
+				String[] credentials = new String[2];
+				String loginStatus;
+				credentials[0] = userNametextField.getText().toString();
+				credentials[1] = passwordField.getText().toString();
+				if (credentials[0].equals("")) {
 					lblEnterUsername.setVisible(true);
-				} else if (pass.equals("")) {
+				} else if (credentials[1].equals("")) {
 					lblEnterPassword.setVisible(true);
 				} else {
-					// TODO: return info to App.java
-					DashBoard dashboard = new DashBoard();
-					LoginFrame.setVisible(false);
-					dashboard.DashBoardFrame.setVisible(true);
+					loginStatus = peer.Connect("LOGIN", credentials);
+					if (loginStatus.contains("successful")) {
+						DashBoard dashboard = new DashBoard(peer);
+						LoginFrame.setVisible(false);
+						dashboard.DashBoardFrame.setVisible(true);
+					}
 				}
 			}
 		});
