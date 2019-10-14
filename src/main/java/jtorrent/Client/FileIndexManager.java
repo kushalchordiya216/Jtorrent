@@ -4,24 +4,26 @@ import java.io.*;
 import java.nio.file.Paths;
 import java.util.*;
 
+import org.javatuples.Pair;
+
 public class FileIndexManager {
 
-	String rootDirectory = null;
-	String[] addedMerkleRoots, removedMerkleRoots, addedFileNames;
+	String rootDirectoryPath = null;
+	ArrayList<String> addedMerkleRoots, removedMerkleRoots, addedFileNames, currentList;
 	File indexFile;
-	File folder;
+	File rootDirectory;
 	ObjectOutputStream fileWriter;
 
 	public FileIndexManager(String username) {
-		this.rootDirectory = System.getProperty("user.home") + "/.P2P/" + username;
+		this.rootDirectoryPath = System.getProperty("user.home") + "/.P2P/" + username;
 
-		folder = new File(rootDirectory);
-		if (!(folder.exists() && folder.isDirectory())) {
-			folder.mkdirs();
+		rootDirectory = new File(rootDirectoryPath);
+		if (!(rootDirectory.exists() && rootDirectory.isDirectory())) {
+			rootDirectory.mkdirs();
 		}
 		try {
-			List<String> l = new ArrayList<String>();
-			this.indexFile = new File(this.rootDirectory + "/indexFile.ser");
+			ArrayList<String> l = new ArrayList<String>();
+			this.indexFile = new File(Paths.get(this.rootDirectoryPath, "indexFile.ser").toString());
 			if (!this.indexFile.exists()) {
 				this.indexFile.createNewFile();
 				fileWriter = new ObjectOutputStream(new FileOutputStream(this.indexFile, false));
@@ -34,65 +36,71 @@ public class FileIndexManager {
 	}
 
 	public void CheckForChanges() {
+		// TODO: test metafile copy
 		try {
-			String files[] = folder.list();
-			List<String> newList = new ArrayList<String>(Arrays.asList(files));
-			newList.remove("indexFile.ser");
+			String files[] = rootDirectory.list();
+			this.currentList = new ArrayList<String>(Arrays.asList(files));
+			this.currentList.remove("indexFile.ser");
 			ObjectInputStream fileReader = new ObjectInputStream(new FileInputStream(this.indexFile));
 			@SuppressWarnings({ "unchecked" })
 			List<String> prevList = (List<String>) fileReader.readObject();
-			for (String oldfile : prevList) {
-				System.out.println(oldfile);
-			}
-			for (String newfile : newList) {
-				System.out.println("newfile: " + newfile);
-			}
-			List<String> addList = new ArrayList<String>(newList);
-			addList.removeAll(prevList);
-			List<String> removeList = new ArrayList<String>(prevList);
-			removeList.removeAll(newList);
+			this.addedMerkleRoots = new ArrayList<String>(this.currentList);
+			this.addedMerkleRoots.removeAll(prevList);
 
-			this.addedMerkleRoots = new String[addList.size()];
-			this.removedMerkleRoots = new String[removeList.size()];
-			this.addedMerkleRoots = addList.toArray(this.addedMerkleRoots);
-			this.removedMerkleRoots = removeList.toArray(this.removedMerkleRoots);
-			// TODO: test metafile copy
+			this.removedMerkleRoots = new ArrayList<String>(prevList);
+			this.removedMerkleRoots.removeAll(this.currentList);
+
 			ObjectOutputStream fileWriter = new ObjectOutputStream(new FileOutputStream(this.indexFile, false));
-			fileWriter.writeObject(newList);
+			fileWriter.writeObject(this.currentList);
 
 			fileReader.close();
 			fileWriter.close();
-			getFileNames();
+			getNewFileNames();
+
 		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}
 	}
 
-	public void getFileNames() {
-		ArrayList<String> addedList = new ArrayList<String>();
+	public ArrayList<Pair<String, Integer>> getDashboardData() {
+		ArrayList<Pair<String, Integer>> dashBoardData = new ArrayList<>();
+		for (String merkleRoot : this.currentList) {
+			File merkleRootFolder = Paths.get(this.rootDirectoryPath, merkleRoot).toFile();
+			Integer fileSizeMB = merkleRootFolder.list().length - 1;
+			String fileName = null;
+			for (String file : merkleRootFolder.list()) {
+				if (file.contains(".metadata")) {
+					fileName = file.substring(0, file.length() - 9);
+				}
+			}
+			dashBoardData.add(Pair.with(fileName, Integer.valueOf(fileSizeMB)));
+		}
+		return dashBoardData;
+	}
+
+	public void getNewFileNames() {
+		this.addedFileNames = new ArrayList<String>();
 		for (String merkleRoot : this.addedMerkleRoots) {
-			File directory = Paths.get(this.rootDirectory, merkleRoot).toFile();
+			File directory = Paths.get(this.rootDirectoryPath, merkleRoot).toFile();
 			String[] filelist = directory.list();
 			for (String file : filelist) {
 				if (file.contains(".metadata")) {
-					addedList.add(file.substring(0, file.length() - 9));
+					this.addedFileNames.add(file.substring(0, file.length() - 9));
 				}
 			}
 		}
-		this.addedFileNames = new String[addedList.size()];
-		this.addedFileNames = addedList.toArray(this.addedFileNames);
-
 	}
 
-	public String[] getAddedMerkleRoots() {
+	// TODO: refactor to use pairs
+	public ArrayList<String> getAddedMerkleRoots() {
 		return this.addedMerkleRoots;
 	}
 
-	public String[] getRemovedMerkleRoots() {
+	public ArrayList<String> getRemovedMerkleRoots() {
 		return this.removedMerkleRoots;
 	}
 
-	public String[] getAddedFileNames() {
+	public ArrayList<String> getAddedFileNames() {
 		return this.addedFileNames;
 	}
 }

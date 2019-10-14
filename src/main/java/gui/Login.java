@@ -12,6 +12,7 @@ import java.awt.SystemColor;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.ImageIcon;
 import javax.swing.JTextField;
 import javax.swing.JPasswordField;
@@ -109,6 +110,7 @@ public class Login {
 		LoginFrame.getContentPane().add(lblEnterPassword);
 
 		JLabel RegisterLabel = new JLabel("New User ? Register.");
+		RegisterLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		RegisterLabel.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
 		RegisterLabel.setForeground(new Color(255, 255, 255));
 		RegisterLabel.addMouseListener(new MouseAdapter() {
@@ -120,10 +122,35 @@ public class Login {
 			}
 		});
 		RegisterLabel.setFont(new Font("Berlin Sans FB Demi", Font.BOLD, 24));
-		RegisterLabel.setBounds(320, 426, 312, 40);
+		RegisterLabel.setBounds(205, 426, 427, 40);
 		LoginFrame.getContentPane().add(RegisterLabel);
 
 		JButton btnLogin = new JButton("LOGIN");
+		btnLogin.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				String[] credentials = new String[2];
+				String loginStatus;
+				credentials[0] = userNametextField.getText().toString();
+				credentials[1] = passwordField.getText().toString();
+				if (credentials[0].equals("")) {
+					lblEnterUsername.setVisible(true);
+				} else if (credentials[1].equals("")) {
+					lblEnterPassword.setVisible(true);
+				} else {
+					loginStatus = peer.Connect("LOGIN", credentials);
+					if (loginStatus.contains("successful")) {
+						DashBoard dashboard = new DashBoard(peer);
+						LoginFrame.setVisible(false);
+						dashboard.DashBoardFrame.setVisible(true);
+					}
+					else
+					{
+						JOptionPane.showMessageDialog(btnLogin,"Invalid credentials");
+					}
+				}
+			}
+		});
 		btnLogin.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
 		btnLogin.setForeground(new Color(0, 102, 153));
 		btnLogin.setBackground(new Color(255, 255, 255));
@@ -132,6 +159,7 @@ public class Login {
 		LoginFrame.getContentPane().add(btnLogin);
 
 		JLabel ForgetPasswordLabel = new JLabel("Forget Password?");
+		ForgetPasswordLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		ForgetPasswordLabel.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
 		ForgetPasswordLabel.setForeground(new Color(255, 255, 255));
 		ForgetPasswordLabel.addMouseListener(new MouseAdapter() {
@@ -143,7 +171,7 @@ public class Login {
 			}
 		});
 		ForgetPasswordLabel.setFont(new Font("Berlin Sans FB Demi", Font.BOLD, 27));
-		ForgetPasswordLabel.setBounds(320, 461, 297, 45);
+		ForgetPasswordLabel.setBounds(205, 461, 427, 45);
 		LoginFrame.getContentPane().add(ForgetPasswordLabel);
 
 		JLabel lblPassword = new JLabel(" Password");

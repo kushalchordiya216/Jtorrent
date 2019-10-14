@@ -3,6 +3,7 @@ package jtorrent.Database;
 import jtorrent.Communication.Requests.*;
 
 import java.sql.*;
+import java.util.ArrayList;
 
 public class FilesTable implements CRUDInterface {
     private Connection connection = null;
@@ -30,12 +31,12 @@ public class FilesTable implements CRUDInterface {
             System.out.println(updateRequest.getUsername() + "@" + updateRequest.getHostName()
                     + " tried to add a file entry that broke sql contraints");
         }
-        String[] addedMerkleRoots = updateRequest.getAddedMerkleRoots();
-        String[] addedFileNames = updateRequest.getAddedFileNames();
-        for (int i = 0; i < addedMerkleRoots.length; i++) {
+        ArrayList<String> addedMerkleRoots = updateRequest.getAddedMerkleRoots();
+        ArrayList<String> addedFileNames = updateRequest.getAddedFileNames();
+        for (int i = 0; i < addedMerkleRoots.size(); i++) {
             try {
-                stmt.setString(3, addedMerkleRoots[i]);
-                stmt.setString(5, addedFileNames[i]);
+                stmt.setString(3, addedMerkleRoots.get(i));
+                stmt.setString(5, addedFileNames.get(i));
                 System.out.println("Inside db package");
                 System.out.println(stmt);
                 stmt.executeUpdate();

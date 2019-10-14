@@ -15,10 +15,10 @@ import jtorrent.Encoding.Decode;
  * Class to handle file leeching creates a serversocket that listens for
  * incoming pieces of files balances load between connected peers
  * 
- * @param merkleRoot    merkleRoot of the file to be transferred
- * @param metadataHash  hashmap of the metadata for the file
- * @param rootDirectory the root of the directory where users files are to be
- *                      stored
+ * @param merkleRoot        merkleRoot of the file to be transferred
+ * @param metadataHash      hashmap of the metadata for the file
+ * @param rootDirectoryPath the root of the directory where users files are to
+ *                          be stored
  */
 public class FileLeecher implements Runnable {
 
@@ -58,6 +58,10 @@ public class FileLeecher implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public ArrayList<String> getPendingPieces() {
+        return this.pendingPieces;
     }
 
     public void updatePendingPieces(String pieceHash) {
@@ -124,6 +128,7 @@ public class FileLeecher implements Runnable {
                         writePiecetoDisk(pieceHash, piece.getContent());
                     }
                 } else if (messageType.equals("DISCONNECT")) {
+                    // peer is going offline
                     peerSockets.remove(socket);
                     BalanceLoad();
                     Thread.currentThread().interrupt();
@@ -132,6 +137,7 @@ public class FileLeecher implements Runnable {
         } catch (IOException | ClassNotFoundException e) {
             System.out.println("One peer has disconnected!\n");
             peerSockets.remove(socket);
+            BalanceLoad();
             e.printStackTrace();
         }
         try {
@@ -182,7 +188,6 @@ public class FileLeecher implements Runnable {
 
     public void run() {
         new Thread(new Runnable() {
-
             @Override
             public void run() {
                 leech();

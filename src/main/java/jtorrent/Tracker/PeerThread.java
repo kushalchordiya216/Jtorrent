@@ -101,7 +101,7 @@ public class PeerThread implements Runnable {
             String password = userTable.RecoverPassword(connectRequest);
             this.writeToPeer.writeObject(password);
             break;
-        case "DISCONNECT":
+        case "LOGOUT":
             connectRequest.setActive(false);
             connectRequest.setHostName(connectRequest.getUsername());
             result = userTable.Update(connectRequest);

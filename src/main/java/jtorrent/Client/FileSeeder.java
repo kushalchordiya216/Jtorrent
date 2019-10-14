@@ -36,26 +36,28 @@ public class FileSeeder implements Runnable {
     }
 
     public void listener() {
-        try {
-            Message message = (Message) this.readFromPeer.readObject();
-            if (message.getMessageType().equals("DISTRIBUTION")) {
-                DistributionMessage distributionMessage = (DistributionMessage) message;
-                this.assignedIndex = distributionMessage.getAssignedIndex();
-                this.numPeers = distributionMessage.getNumPeers();
-                System.out.println("total num peers:" + this.numPeers);
-                System.out.println("i am number " + this.assignedIndex);
-            } else {
-                System.out.println("Completion message received from peer\nStopping transmission");
-                Thread.currentThread().join();
-            }
-        } catch (ClassNotFoundException | IOException | InterruptedException e) {
-            System.out.println("Connection with peer interrupted\nStopping transmission!");
+        while (true) {
             try {
-                Thread.currentThread().join();
-            } catch (InterruptedException e1) {
-                e1.printStackTrace();
+                Message message = (Message) this.readFromPeer.readObject();
+                if (message.getMessageType().equals("DISTRIBUTION")) {
+                    DistributionMessage distributionMessage = (DistributionMessage) message;
+                    this.assignedIndex = distributionMessage.getAssignedIndex();
+                    this.numPeers = distributionMessage.getNumPeers();
+                    System.out.println("total num peers:" + this.numPeers);
+                    System.out.println("i am number " + this.assignedIndex);
+                } else {
+                    System.out.println("Completion message received from peer\nStopping transmission");
+                    Thread.currentThread().join();
+                }
+            } catch (ClassNotFoundException | IOException | InterruptedException e) {
+                System.out.println("Connection with peer interrupted\nStopping transmission!");
+                try {
+                    Thread.currentThread().join();
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                }
+                e.printStackTrace();
             }
-            e.printStackTrace();
         }
     }
 
@@ -132,5 +134,9 @@ public class FileSeeder implements Runnable {
                 sendPieces();
             }
         }).start();
+    }
+
+    protected void finalize() {
+        this.disconnect();
     }
 }

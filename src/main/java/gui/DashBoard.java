@@ -4,6 +4,7 @@ import java.awt.Font;
 import java.awt.Color;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 import java.awt.Toolkit;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -14,7 +15,11 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.table.TableColumn;
+
+import org.javatuples.Pair;
+
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -25,12 +30,14 @@ import javax.swing.JTable;
 import javax.swing.border.MatteBorder;
 
 import jtorrent.Client.Peer;
+import jtorrent.Client.FileLeecher;;
 
 public class DashBoard {
 
 	public JFrame DashBoardFrame;
 	JProgressBar progressbar = null;
 	private Peer peer;
+	private String metaFileName = null, publishFileName = null;
 
 	/**
 	 * Launch the application.
@@ -50,9 +57,13 @@ public class DashBoard {
 
 	/**
 	 * Create the application.
+	 * 
+	 * @wbp.parser.entryPoint
 	 */
 	public DashBoard(Peer peer) {
 		this.peer = peer;
+		peer.UpdateDaemon();
+		peer.SeederDaemon();
 		initialize();
 	}
 
@@ -96,32 +107,15 @@ public class DashBoard {
 		lblConnectMsg.setBounds(10, 10, 326, 37);
 		UpperPanel.add(lblConnectMsg);
 
-		JLabel lblHI = new JLabel("Hi ");
-		lblHI.setForeground(Color.BLACK);
-		lblHI.setFont(new Font("Times New Roman", Font.BOLD | Font.ITALIC, 24));
-		lblHI.setBackground(Color.WHITE);
-		lblHI.setBounds(913, 10, 60, 37);
-		UpperPanel.add(lblHI);
-
 		JLabel lblUsername = new JLabel("\"Username\"");
 		lblUsername.setForeground(Color.BLACK);
 		lblUsername.setFont(new Font("Times New Roman", Font.BOLD | Font.ITALIC, 24));
 		lblUsername.setBackground(Color.WHITE);
-		lblUsername.setBounds(967, 10, 246, 37);
+		lblUsername.setBounds(872, 10, 341, 37);
 		UpperPanel.add(lblUsername);
 
 		JLabel lblLogout = new JLabel("LOGOUT??");
-		lblLogout.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				lblLogout.setForeground(new Color(0, 153, 153));
-			}
 
-			@Override
-			public void mouseExited(MouseEvent e) {
-				lblLogout.setForeground(new Color(0, 0, 0));
-			}
-		});
 		lblLogout.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		lblLogout.setBorder(new MatteBorder(3, 3, 3, 3, (Color) new Color(32, 178, 170)));
 		lblLogout.setIcon(new ImageIcon(DashBoard.class.getResource("/imgs/20712467.jpg")));
@@ -174,13 +168,13 @@ public class DashBoard {
 		DashBoardFrame.getContentPane().add(SharePanel);
 		SharePanel.setLayout(null);
 
-		JButton btnUploadMetadata = new JButton("SELECT METADATA");
+		JButton btnUploadMetadata = new JButton("Receive File");
 		btnUploadMetadata.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
 		btnUploadMetadata.setBorder(new LineBorder(new Color(0, 0, 0), 3));
 		btnUploadMetadata.setBackground(new Color(255, 255, 255));
-		btnUploadMetadata.setFont(new Font("Berlin Sans FB Demi", Font.BOLD, 20));
-		btnUploadMetadata.setBounds(130, 173, 298, 71);
+		btnUploadMetadata.setFont(new Font("Berlin Sans FB Demi", Font.BOLD, 29));
+		btnUploadMetadata.setBounds(125, 232, 298, 71);
 		SharePanel.add(btnUploadMetadata);
 
 		JPanel DownloadPanel = new JPanel();
@@ -189,7 +183,7 @@ public class DashBoard {
 		SharePanel.add(DownloadPanel);
 		DownloadPanel.setLayout(null);
 
-		JButton btnStartDownload = new JButton("START DOWNLOAD");
+		JButton btnStartDownload = new JButton("CHOOSE ACTION");
 		btnStartDownload.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		btnStartDownload.setForeground(new Color(32, 178, 170));
 		btnStartDownload.setEnabled(false);
@@ -197,8 +191,8 @@ public class DashBoard {
 		btnStartDownload.setBounds(49, 264, 279, 43);
 		DownloadPanel.add(btnStartDownload);
 
-		JLabel lblNoMetadataFile = new JLabel("NO METADATA FILE FOUND!!");
-		lblNoMetadataFile.setFont(new Font("Times New Roman", Font.BOLD, 20));
+		JLabel lblNoMetadataFile = new JLabel("Choose a Action!");
+		lblNoMetadataFile.setFont(new Font("Times New Roman", Font.BOLD, 24));
 		lblNoMetadataFile.setHorizontalAlignment(SwingConstants.CENTER);
 		lblNoMetadataFile.setBounds(10, 10, 383, 53);
 		DownloadPanel.add(lblNoMetadataFile);
@@ -224,6 +218,17 @@ public class DashBoard {
 		lblGetfilesize.setFont(new Font("Times New Roman", Font.BOLD, 20));
 		lblGetfilesize.setBounds(138, 171, 233, 43);
 		DownloadPanel.add(lblGetfilesize);
+
+		JButton btnPublishFile = new JButton("Publish File");
+		btnPublishFile.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+			}
+		});
+		btnPublishFile.setFont(new Font("Berlin Sans FB Demi", Font.BOLD, 28));
+		btnPublishFile.setBorder(new LineBorder(new Color(0, 0, 0), 3));
+		btnPublishFile.setBackground(Color.WHITE);
+		btnPublishFile.setBounds(125, 97, 298, 71);
+		SharePanel.add(btnPublishFile);
 
 		JPanel MyFilesPanel = new JPanel();
 		MyFilesPanel.setBackground(new Color(0, 153, 153));
@@ -253,19 +258,19 @@ public class DashBoard {
 		progressbar.setStringPainted(true);
 		ProcessPanel.add(progressbar);
 
-		JLabel lblFile1 = new JLabel("New label");
+		JLabel lblFile1 = new JLabel("File 1");
 		lblFile1.setForeground(Color.WHITE);
 		lblFile1.setFont(new Font("Times New Roman", Font.BOLD, 22));
 		lblFile1.setBounds(84, 48, 381, 41);
 		ProcessPanel.add(lblFile1);
 
-		JLabel lblFile2 = new JLabel("File3Here");
+		JLabel lblFile2 = new JLabel("File 2");
 		lblFile2.setFont(new Font("Times New Roman", Font.BOLD, 21));
 		lblFile2.setForeground(Color.WHITE);
 		lblFile2.setBounds(84, 181, 381, 41);
 		ProcessPanel.add(lblFile2);
 
-		JLabel lblFile3 = new JLabel("File2Here");
+		JLabel lblFile3 = new JLabel("File 3");
 		lblFile3.setForeground(Color.WHITE);
 		lblFile3.setFont(new Font("Times New Roman", Font.BOLD, 22));
 		lblFile3.setBounds(84, 292, 381, 41);
@@ -307,14 +312,14 @@ public class DashBoard {
 				headerHead.setFont(new Font("Times New Roman", Font.BOLD, 22));
 				scrollPane.setColumnHeaderView(headerHead);
 
-				String filedesc[][] = { {
-						"abc.txtfsdfdsvhfvdshvfdsjvfjdsvjfbdsjfjdsbfdsjhdbsfjsdbfjsdbfjsdbfjsdbfjbsdfjhsbjfbsdjfbsdjbfsdbfjsdbfj",
-						"65" }, { "abc.txt", "65" }, { "abc.txt", "65" }, { "abc.txt", "65" }, { "abc.txt", "65" },
-						{ "abc.txt", "65" }, { "abc.txt", "65" }, { "abc.txt", "65" }, { "abc.txt", "65" },
-						{ "abc.txt", "65" }, { "abc.txt", "65" }, { "abc.txt", "65" }, { "abc.txt", "65" },
-						{ "abc.txt", "65" }, { "abc.txt", "65" }, { "abc.txt", "65" }, { "abc.txt", "65" },
-						{ "abc.txt", "65" }, { "abc.txt", "65" }, { "abc.txt", "65" }, { "abc.txt", "65" },
-						{ "abc.txt", "65" }, { "abc.txt", "65" }, { "abc.txt", "65" } };
+				ArrayList<Pair<String, Integer>> myFiles = peer.getMyFiles();
+				Integer numFiles = myFiles.size();
+				String filedesc[][] = new String[numFiles][numFiles];
+				Integer index = 0;
+				for (Pair<String, Integer> myfile : myFiles) {
+					filedesc[index][0] = myfile.getValue0();
+					filedesc[index][1] = Integer.toString(myfile.getValue1());
+				}
 				String filecolname[] = { "FileName", "Size" };
 				JTable myFilesTable = new JTable(filedesc, filecolname);
 				myFilesTable.setFont(new Font("FreeSerif", Font.PLAIN, 30));
@@ -341,9 +346,49 @@ public class DashBoard {
 				SharePanel.setVisible(false);
 				MyFilesPanel.setVisible(false);
 				ProcessPanel.setVisible(true);
-
 			}
 		});
+
+		btnPublishFile.addMouseListener(new MouseAdapter() {
+
+			@Override
+
+			public void mouseClicked(MouseEvent e) {
+				JFileChooser publishFileChoose = new JFileChooser(System.getProperty("user.home"));
+
+				int r = publishFileChoose.showSaveDialog(null);
+				publishFileName = publishFileChoose.getSelectedFile().getAbsolutePath();
+				if (r == JFileChooser.APPROVE_OPTION) {
+					// set the label to the path of the selected file
+					if (System.getProperty("os.name").contains("Win")) {
+						String[] filePathArray = publishFileName.split("\\\\");
+						publishFileName = new String();
+						for (String s : filePathArray) {
+							publishFileName = '/' + s;
+						}
+					}
+					peer.Publish(publishFileName);
+					lblFileName.setText(publishFileChoose.getSelectedFile().getAbsolutePath());
+					lblNoMetadataFile.setFont(new Font("Times New Roman", Font.BOLD, 16));
+					lblNoMetadataFile.setText("File Selected Successfully!");
+					lblNoMetadataFile.setForeground(new Color(0, 153, 153));
+
+				}
+			}
+
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				btnPublishFile.setBorder(new LineBorder(new Color(0, 153, 153), 3));
+				btnPublishFile.setForeground(new Color(0, 153, 153));
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e) {
+				btnPublishFile.setBorder(new LineBorder(new Color(0, 0, 0), 3));
+				btnPublishFile.setForeground(new Color(0, 0, 0));
+			}
+		});
+
 		btnUploadMetadata.addMouseListener(new MouseAdapter() {
 			@Override
 
@@ -354,16 +399,19 @@ public class DashBoard {
 					// set the label to the path of the selected file
 					lblFileName.setText(metadataChoose.getSelectedFile().getName());
 					btnStartDownload.setEnabled(true);
+					btnStartDownload.setText("Start Download");
 					lblNoMetadataFile.setFont(new Font("Times New Roman", Font.BOLD, 16));
-					lblNoMetadataFile.setText("METADATA SUCCESSFULLY UPLOAD!");
+					lblNoMetadataFile.setText("METADATA SUCCESSFULLY SELECTED!");
 					lblNoMetadataFile.setForeground(new Color(0, 153, 153));
-
+					metaFileName = metadataChoose.getSelectedFile().getAbsolutePath();
+					if (System.getProperty("os.name").contains("Win")) {
+						String[] filePathArray = metaFileName.split("\\\\");
+						metaFileName = new String();
+						for (String s : filePathArray) {
+							metaFileName += '/' + s;
+						}
+					}
 				}
-				// if the user cancelled the operation
-				else {
-					// lbl.setText("the user cancelled the operation");
-				}
-
 			}
 
 			@Override
@@ -378,16 +426,40 @@ public class DashBoard {
 				btnUploadMetadata.setForeground(new Color(0, 0, 0));
 			}
 		});
+
+		lblLogout.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				lblLogout.setForeground(new Color(0, 153, 153));
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e) {
+				lblLogout.setForeground(new Color(0, 0, 0));
+			}
+
+			@Override
+			public void mouseClicked(MouseEvent e) {
+
+				int getStatus = JOptionPane.showConfirmDialog(lblLogout, "Do you want to surely logout??");
+				if (getStatus == 0) {
+					String logout[] = { "onkar", "onkar" };
+					peer.Connect("LOGOUT", logout);
+					Login login = new Login(new Peer());
+					DashBoardFrame.setVisible(false);
+					login.LoginFrame.setVisible(true);
+				}
+
+			}
+		});
+
 		btnStartDownload.addMouseListener(new MouseAdapter() {
 			@Override
-
 			public void mouseClicked(MouseEvent e) {
 				new Thread(new Runnable() {
-
 					@Override
 					public void run() {
-						// TODO Auto-generated method stub
-						fill();
+						startProgressBar();
 					}
 				}).start();
 			}
@@ -395,16 +467,18 @@ public class DashBoard {
 
 	}
 
-	public void fill() {
-		int i = 0;
+	public void startProgressBar() {
+		int percentageTransferred = 0;
+		FileLeecher fileLeecher = peer.leechFile(metaFileName);
+		Integer totalPieces = fileLeecher.getPendingPieces().size();
 		try {
-			while (i <= 100) {
+			while (percentageTransferred <= 100) {
+				Integer pendingPieces = fileLeecher.getPendingPieces().size();
 				// fill the menu bar
-				progressbar.setValue(i + 10);
+				progressbar.setValue((pendingPieces / totalPieces) * 100);
 
 				// delay the thread
 				Thread.sleep(1000);
-				i += 20;
 			}
 		} catch (Exception e) {
 		}

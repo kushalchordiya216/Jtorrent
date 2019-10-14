@@ -4,6 +4,7 @@ import java.awt.EventQueue;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 
 import java.awt.Font;
 import javax.swing.JTextField;
@@ -97,10 +98,10 @@ public class Register {
 		passwordField.setBounds(327, 156, 309, 31);
 		registerFrame.getContentPane().add(passwordField);
 
-		JLabel ConfirmPasswordLabel = new JLabel("Confirm Password -");
+		JLabel ConfirmPasswordLabel = new JLabel("Confirm Password    -");
 		ConfirmPasswordLabel.setForeground(new Color(255, 255, 255));
 		ConfirmPasswordLabel.setFont(new Font("Rockwell Condensed", Font.BOLD, 22));
-		ConfirmPasswordLabel.setBounds(80, 240, 236, 37);
+		ConfirmPasswordLabel.setBounds(58, 240, 258, 37);
 		registerFrame.getContentPane().add(ConfirmPasswordLabel);
 
 		confirmPasswordfield = new JPasswordField();
@@ -183,6 +184,43 @@ public class Register {
 			}
 		});
 		JButton btnSubmit = new JButton("SIGN IN");
+		btnSubmit.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				String[] credentials = new String[4];
+				credentials[0] = userNameTextField.getText().toString();
+				System.out.println(credentials[0]);
+				credentials[1] = passwordField.getText().toString();
+				System.out.println(credentials[1]);
+				credentials[2] = nicknametextfield.getText().toString();
+				System.out.println(credentials[2]);
+				credentials[3] = confirmPasswordfield.getText().toString();
+				System.out.println(credentials[3]);
+				if (credentials[0].equals("")) {
+					lblEnterUsername.setVisible(true);
+				} else if (credentials[1].equals("")) {
+					lblEnterPassword.setVisible(true);
+				} else if (!credentials[1].equals(credentials[3])) {
+					checkPasswordLabel.setVisible(true);
+				} else if (credentials[2].equals("")) {
+					checknicknamelabel.setVisible(true);
+				} 
+				else {
+
+					String registerStatus = peer.Connect("REGISTER", credentials);
+					if (registerStatus.contains("successful")) {
+						registerFrame.setVisible(false);
+						DashBoard dashboard = new DashBoard(peer);
+						dashboard.DashBoardFrame.setVisible(true);
+					}
+					else
+					{
+						JOptionPane.showMessageDialog(btnSubmit, "Username Already Present");
+					}
+				}
+			
+			}
+		});
 		btnSubmit.setForeground(new Color(255, 255, 255));
 		btnSubmit.setBackground(new Color(0, 102, 153));
 		btnSubmit.setFont(new Font("Rockwell Condensed", Font.BOLD, 25));
@@ -210,13 +248,18 @@ public class Register {
 					checkPasswordLabel.setVisible(true);
 				} else if (credentials[2].equals("")) {
 					checknicknamelabel.setVisible(true);
-				} else {
+				} 
+				else {
 
 					String registerStatus = peer.Connect("REGISTER", credentials);
 					if (registerStatus.contains("successful")) {
 						registerFrame.setVisible(false);
 						DashBoard dashboard = new DashBoard(peer);
 						dashboard.DashBoardFrame.setVisible(true);
+					}
+					else
+					{
+						JOptionPane.showMessageDialog(btnSubmit, "Username Already Present");
 					}
 				}
 			}

@@ -132,23 +132,88 @@ public class ForgetPassword {
 		ForgetPasswordFrame.getContentPane().add(backgroundLabel);
 
 		btnSubmit.addMouseListener(new MouseAdapter() {
+			
+			
+			
+			
 			@Override
 			public void mouseClicked(MouseEvent e) {
 
 				String[] credentials = new String[2];
 				credentials[0] = usernametextField.getText().toString();
 				credentials[1] = nicknametextfield.getText().toString();
-				if (credentials[0].equals("")) {
+				if (credentials[0].equals(""))
+				{
 					lblEnterUsername.setVisible(true);
-				} else if (credentials[1].equals("")) {
+				} 
+				else if (credentials[1].equals(""))
+				{
 					lblEnterNickName.setVisible(true);
-				} else {
-					JOptionPane.showMessageDialog(backgroundLabel, "Submitted");
-					String passwordStatus = peer.Connect("FORGOT PASSWORD", credentials);
-					JOptionPane.showMessageDialog(backgroundLabel, passwordStatus);
+				}
+				else
+				{
+					int input=JOptionPane.showConfirmDialog(btnSubmit, "Are you sure");
+					if(input==0)
+					{
+						String passwordStatus = peer.Connect("FORGOT PASSWORD", credentials);
+						if(!passwordStatus.equals("No such user!"))
+						{
+							JOptionPane.showMessageDialog(backgroundLabel, "Your Password\n"+passwordStatus);
+							Login login=new Login(peer);
+							login.LoginFrame.setVisible(true);
+						}
+						else
+						{
+							JOptionPane.showMessageDialog(btnSubmit, "Invalid Credential");
+						}
+					}
+					
 				}
 			}
 		});
+		
+		
+		btnSubmit.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				
+				
+				String[] credentials = new String[2];
+				credentials[0] = usernametextField.getText().toString();
+				credentials[1] = nicknametextfield.getText().toString();
+				if (credentials[0].equals(""))
+				{
+					lblEnterUsername.setVisible(true);
+				} 
+				else if (credentials[1].equals(""))
+				{
+					lblEnterNickName.setVisible(true);
+				}
+				else
+				{
+					int input=JOptionPane.showConfirmDialog(btnSubmit, "Are you sure");
+					if(input==0)
+					{
+						String passwordStatus = peer.Connect("FORGOT PASSWORD", credentials);
+						if(!passwordStatus.equals("No such user!"))
+						{
+							JOptionPane.showMessageDialog(backgroundLabel, "Your Password\n"+passwordStatus);
+							Login login=new Login(peer);
+							login.LoginFrame.setVisible(true);
+						}
+						else
+						{
+							JOptionPane.showMessageDialog(btnSubmit, "Invalid Credential");
+						}
+					}
+					
+				}
+
+				
+			}
+		});
+
+		
 		usernametextField.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {

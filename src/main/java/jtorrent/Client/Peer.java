@@ -6,6 +6,8 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
 
+import org.javatuples.Pair;
+
 import jtorrent.Communication.Requests.*;
 import jtorrent.Encoding.*;
 
@@ -16,13 +18,13 @@ public class Peer {
     public Boolean isLive = false;
     private ObjectOutputStream writeToTracker = null;
     private ObjectInputStream readFromTracker = null;
+    private ArrayList<Pair<String, Integer>> myFiles = new ArrayList<>();
     // 2409:4042:229d:47ad:3d26:b9c8:3b79:335b
     // 2409:4042:2595:4b85:5b7e:d25c:51bd:c766
     private String trackerIP = new String("localhost");
     private UserProfile userProfile = new UserProfile();
     public String rootDirectory = null;
     HashMap<Integer, String[]> changedFiles = new HashMap<Integer, String[]>();
-
     private ThreadPoolExecutor leechExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(3);
     private ThreadPoolExecutor seedExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(3);
     private ScheduledExecutorService updateExecutor = (ScheduledExecutorService) Executors.newScheduledThreadPool(1);
@@ -36,6 +38,10 @@ public class Peer {
         } catch (IOException e) {
             System.out.println("Couldnt establish connection with tracker!");
         }
+    }
+
+    public String getRootDirectory() {
+        return this.rootDirectory;
     }
 
     // /home/kushal/Downloads/paniyosa.mp3.metadata
@@ -118,7 +124,7 @@ public class Peer {
 
     public String Logout() {
         try {
-            ConnectRequest disconnectRequest = new ConnectRequest(8080, "DISCONNECT", this.userProfile.getUsername(),
+            ConnectRequest disconnectRequest = new ConnectRequest(8080, "LOGOUT", this.userProfile.getUsername(),
                     this.userProfile.getPassword(), this.userProfile.getNickName());
             writeToTracker.writeObject(disconnectRequest);
         } catch (IOException e) {
@@ -134,9 +140,10 @@ public class Peer {
                 fileIndexManager.getAddedMerkleRoots(), fileIndexManager.getRemovedMerkleRoots(),
                 fileIndexManager.getAddedFileNames());
         this.writeToTracker.writeObject(updateRequest);
+        this.myFiles = fileIndexManager.getDashboardData();
     }
 
-    public void leechFile(String metaFileName) {
+    public FileLeecher leechFile(String metaFileName) {
         try {
             Decode decode = new Decode(metaFileName, this.rootDirectory);
             String merkleRoot = decode.getMerkleRoot();
@@ -147,12 +154,14 @@ public class Peer {
             this.leechExecutor.submit(() -> {
                 fileLeecher.run();
             });
+            return fileLeecher;
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return null;
     }
 
-    public void SeedFile() {
+    public void SeederDaemon() {
         System.out.println("Seeder started");
         while (true) {
             try {
@@ -176,12 +185,18 @@ public class Peer {
         encode.Split();
     }
 
-    public String getRootDirectory() {
-        return this.rootDirectory;
+    public void UpdateDaemon() {
+        this.updateExecutor.scheduleAtFixedRate(new Thread(() -> {
+            try {
+                this.Update();
+            } catch (IOException e) {
+                System.out.println("error in sending updated files list to peer");
+            }
+        }), 0, 20, TimeUnit.SECONDS);
     }
-}
 
-class filePairs {
-    public filePairs(String filename, long fileSize) {
+    public ArrayList<Pair<String, Integer>> getMyFiles() {
+        return myFiles;
     }
+
 }

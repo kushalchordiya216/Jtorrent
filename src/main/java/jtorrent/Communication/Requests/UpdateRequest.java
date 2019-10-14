@@ -1,15 +1,18 @@
 package jtorrent.Communication.Requests;
 
+import java.util.ArrayList;
+
 public class UpdateRequest implements Request {
 
     private static final long serialVersionUID = 1726946734101117489L;
     private final String requestType = "UPDATE";
-    private String[] addedMerkleRoots = null, removedMerkleRoots = null, addedFileNames = null, removedFileNames = null;
+    private ArrayList<String> addedMerkleRoots = null, removedMerkleRoots = null, addedFileNames = null,
+            removedFileNames = null;
     private String hostname = null, username = null;
     private Integer port = null, filesizeMB = null;
 
-    public UpdateRequest(String username, String[] addedMerkleFiles, String[] removedMerkleRoots,
-            String[] addedFileNames) {
+    public UpdateRequest(String username, ArrayList<String> addedMerkleFiles, ArrayList<String> removedMerkleRoots,
+            ArrayList<String> addedFileNames) {
         this.username = username;
         this.addedMerkleRoots = addedMerkleFiles;
         this.removedMerkleRoots = removedMerkleRoots;
@@ -36,19 +39,19 @@ public class UpdateRequest implements Request {
         this.hostname = hostName.substring(1);
     }
 
-    public String[] getAddedMerkleRoots() {
+    public ArrayList<String> getAddedMerkleRoots() {
         return this.addedMerkleRoots;
     }
 
-    public String[] getRemovedMerkleRoots() {
+    public ArrayList<String> getRemovedMerkleRoots() {
         return this.removedMerkleRoots;
     }
 
-    public String[] getAddedFileNames() {
+    public ArrayList<String> getAddedFileNames() {
         return this.addedFileNames;
     }
 
-    public String[] getRemovedFileNames() {
+    public ArrayList<String> getRemovedFileNames() {
         return this.removedFileNames;
     }
 
