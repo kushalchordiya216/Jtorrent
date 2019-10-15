@@ -25,6 +25,7 @@ public class FileLeecher implements Runnable {
     private String merkleRoot = null;
     private ServerSocket serverSocket = null;
     private ArrayList<Socket> peerSockets = null;
+    private ArrayList<ObjectOutputStream> peerWriters = new ArrayList<ObjectOutputStream>();
     private ArrayList<String> pendingPieces = new ArrayList<String>();
     private HashMap<String, String> metadataHash = null;
     private String rootDirectory = null;
@@ -81,14 +82,14 @@ public class FileLeecher implements Runnable {
     public void BalanceLoad() {
         Integer numPeers = this.peerSockets.size();
         Integer index = 0;
-        for (Socket socket : peerSockets) {
+        for (ObjectOutputStream peerWriter : this.peerWriters) {
             System.out.println("Peers = " + numPeers + "\n index = " + index);
             DistributionMessage distributionMessage;
             distributionMessage = new DistributionMessage(numPeers, index, this.numPiecesRecieved);
             index++;
             try {
-                ObjectOutputStream writeToSeeder = new ObjectOutputStream(socket.getOutputStream());
-                writeToSeeder.writeObject(distributionMessage);
+                peerWriter.writeObject(distributionMessage);
+                peerWriter.flush();
                 // writeToSeeder.close();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -168,8 +169,10 @@ public class FileLeecher implements Runnable {
                 // if (this.peerSockets.size() <= 10) {
                 System.out.println("Inside leacher");
                 socket = this.serverSocket.accept();
+                ObjectOutputStream writeToPeer = new ObjectOutputStream(socket.getOutputStream());
                 System.out.println("Seeder connected" + socket);
                 peerSockets.add(socket);
+                peerWriters.add(writeToPeer);
                 System.out.println("After peer socket");
                 this.BalanceLoad();
                 System.out.println("After load balance");

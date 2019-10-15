@@ -43,6 +43,7 @@ public class FileSeeder implements Runnable {
                     DistributionMessage distributionMessage = (DistributionMessage) message;
                     this.assignedIndex = distributionMessage.getAssignedIndex();
                     this.numPeers = distributionMessage.getNumPeers();
+                    this.numfileRecieved = distributionMessage.getNumFilesRecieved();
                     System.out.println("total num peers:" + this.numPeers);
                     System.out.println("i am number " + this.assignedIndex);
                 } else {
@@ -67,9 +68,6 @@ public class FileSeeder implements Runnable {
             if (i % this.numPeers == this.assignedIndex) {
                 byte[] content;
                 String fileName = totalPieces[i];
-                if (fileName.contains(".metadata")) {
-                    continue;
-                }
                 InputStream fileReader;
                 try {
                     File pieceFile = Paths.get(this.rootDirectory.toPath().toString(), fileName).toFile();
@@ -92,7 +90,7 @@ public class FileSeeder implements Runnable {
                 }
             }
             if (i >= this.totalPieces.length - 1) {
-                i = 0;
+                i = -1;
             }
         }
     }
@@ -110,16 +108,6 @@ public class FileSeeder implements Runnable {
 
     @Override
     public void run() {
-        try {
-            DistributionMessage distributionMessage = (DistributionMessage) this.readFromPeer.readObject();
-            this.assignedIndex = distributionMessage.getAssignedIndex();
-            this.numPeers = distributionMessage.getNumPeers();
-            this.numfileRecieved = distributionMessage.getNumFilesRecieved();
-            System.out.println("total num of peers" + this.numPeers);
-            System.out.println("i AM " + this.assignedIndex);
-        } catch (ClassNotFoundException | IOException e) {
-            e.printStackTrace();
-        }
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -127,6 +115,11 @@ public class FileSeeder implements Runnable {
                 listener();
             }
         }).start();
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         new Thread(new Runnable() {
             @Override
             public void run() {

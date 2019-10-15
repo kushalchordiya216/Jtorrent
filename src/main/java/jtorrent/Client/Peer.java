@@ -21,7 +21,7 @@ public class Peer {
     private ArrayList<Pair<String, Integer>> myFiles = new ArrayList<>();
     // 2409:4042:229d:47ad:3d26:b9c8:3b79:335b
     // 2409:4042:2595:4b85:5b7e:d25c:51bd:c766
-    private String trackerIP = new String("localhost");
+    private String trackerIP = new String("2409:4042:2595:4b85:5b7e:d25c:51bd:c766");
     private UserProfile userProfile = new UserProfile();
     public String rootDirectory = null;
     HashMap<Integer, String[]> changedFiles = new HashMap<Integer, String[]>();

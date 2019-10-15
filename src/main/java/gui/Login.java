@@ -143,10 +143,8 @@ public class Login {
 						DashBoard dashboard = new DashBoard(peer);
 						LoginFrame.setVisible(false);
 						dashboard.DashBoardFrame.setVisible(true);
-					}
-					else
-					{
-						JOptionPane.showMessageDialog(btnLogin,"Invalid credentials");
+					} else {
+						JOptionPane.showMessageDialog(btnLogin, "Invalid credentials");
 					}
 				}
 			}
@@ -216,6 +214,8 @@ public class Login {
 						DashBoard dashboard = new DashBoard(peer);
 						LoginFrame.setVisible(false);
 						dashboard.DashBoardFrame.setVisible(true);
+					} else {
+						JOptionPane.showMessageDialog(btnLogin, "Invalid Credentials");
 					}
 				}
 			}

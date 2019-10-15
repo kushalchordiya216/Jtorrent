@@ -63,7 +63,12 @@ public class DashBoard {
 	public DashBoard(Peer peer) {
 		this.peer = peer;
 		peer.UpdateDaemon();
-		peer.SeederDaemon();
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				peer.SeederDaemon();
+			}
+		}).start();
 		initialize();
 	}
 
@@ -319,6 +324,7 @@ public class DashBoard {
 				for (Pair<String, Integer> myfile : myFiles) {
 					filedesc[index][0] = myfile.getValue0();
 					filedesc[index][1] = Integer.toString(myfile.getValue1());
+					index++;
 				}
 				String filecolname[] = { "FileName", "Size" };
 				JTable myFilesTable = new JTable(filedesc, filecolname);
